@@ -56,6 +56,7 @@
   let theme = $state<Theme>("system");
   let activeSearchIndex = $state(-1);
   let sidebarWidth = $state(304);
+  let copiedAddress = $state("");
   let selectedRegister = $derived(registersById.get(selectedId));
   let selectedFolder = $derived(navigationById.get(selectedFolderId));
   let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
@@ -66,6 +67,25 @@
 
   function bitRange(field: RegisterField): string {
     return field.high === field.low ? `${field.low}` : `${field.high}:${field.low}`;
+  }
+
+  async function copyAddress(address: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = address;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    copiedAddress = address;
+    window.setTimeout(() => {
+      if (copiedAddress === address) copiedAddress = "";
+    }, 1200);
   }
 
   function toggleNode(id: string): void {
@@ -371,7 +391,7 @@
             <div
               id="search-results"
               role="listbox"
-              class="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-50 max-h-[65vh] overflow-auto rounded-lg border bg-popover p-1.5 shadow-xl"
+              class="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-50 max-h-[65vh] overflow-auto rounded-lg border bg-card p-1.5 text-card-foreground shadow-xl"
             >
               {#if searchResults.length}
                 {#each searchResults as result, index (result.id)}
@@ -379,14 +399,14 @@
                     id={`search-result-${index}`}
                     role="option"
                     aria-selected={activeSearchIndex === index}
-                    class="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none aria-selected:bg-accent"
+                    class="grid w-full grid-cols-[8rem_minmax(0,1fr)] items-start gap-2 rounded-md px-3 py-2 text-left hover:bg-muted focus-visible:bg-muted focus-visible:outline-none aria-selected:bg-muted"
                     onmouseenter={() => (activeSearchIndex = index)}
                     onclick={() => selectSearchResult(result)}
                   >
-                    <Badge variant="outline" class="mt-0.5 capitalize">{result.kind.replace("-", " ")}</Badge>
+                    <Badge variant="outline" class="mt-0.5 justify-self-start capitalize">{result.kind.replace("-", " ")}</Badge>
                     <span class="min-w-0 flex-1">
-                      <span class="block truncate text-sm font-medium">{result.label}</span>
-                      <span class="block truncate font-mono text-xs text-muted-foreground">{result.context}</span>
+                      <span class="block truncate text-sm font-medium leading-5">{result.label}</span>
+                      <span class="mt-0.5 block truncate font-mono text-xs leading-4 text-muted-foreground">{result.context}</span>
                     </span>
                   </button>
                 {/each}
@@ -406,44 +426,12 @@
       </div>
     </header>
 
-    <main class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-7 md:px-8 md:py-10">
+    <main class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6">
       <div class="mx-auto max-w-6xl">
         {#if selectedRegister}
           <section aria-labelledby="register-title">
-            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div class="min-w-0">
-                <div class="mb-2 flex flex-wrap items-center gap-2">
-                  {#if selectedRegister.absoluteAddressHex}
-                    <Badge class="font-mono text-sm">{selectedRegister.absoluteAddressHex}</Badge>
-                  {/if}
-                  <Badge variant="secondary">{selectedRegister.width}-bit</Badge>
-                  <Badge variant="outline">SW {accessLabel(selectedRegister.softwareAccess)}</Badge>
-                  <Badge variant="outline">HW {accessLabel(selectedRegister.hardwareAccess)}</Badge>
-                </div>
-                <h2 id="register-title" class="text-3xl font-semibold tracking-tight md:text-4xl">
-                  {selectedRegister.name}
-                </h2>
-                <p class="mt-2 break-all font-mono text-xs text-muted-foreground">{selectedRegister.path}</p>
-              </div>
-
-              <div class="grid shrink-0 grid-cols-2 gap-x-6 gap-y-1 rounded-lg border bg-card px-4 py-3 text-sm">
-                <span class="text-muted-foreground">Identifier</span>
-                <code class="text-right">{selectedRegister.identifier}</code>
-                <span class="text-muted-foreground">Offset</span>
-                <code class="text-right">{selectedRegister.addressOffsetHex || "–"}</code>
-                {#if selectedRegister.arrayDimensions.length}
-                  <span class="text-muted-foreground">Array</span>
-                  <code class="text-right">[{selectedRegister.arrayDimensions.join("][")}]</code>
-                {/if}
-                {#if selectedRegister.arrayStrideHex}
-                  <span class="text-muted-foreground">Stride</span>
-                  <code class="break-all text-right">{selectedRegister.arrayStrideHex}</code>
-                {/if}
-              </div>
-            </div>
-
             {#if selectedRegister.groupPath.length}
-              <div class="mt-5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <div class="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <FolderTreeIcon class="mr-1 size-3.5" />
                 {#each selectedRegister.groupPath as group, index}
                   {#if index}<ChevronRightIcon class="size-3" />{/if}
@@ -452,16 +440,44 @@
               </div>
             {/if}
 
+            <div>
+              <div class="min-w-0">
+                <div class="mb-2 flex flex-wrap items-center gap-2">
+                  {#if selectedRegister.absoluteAddressHex}
+                    <button
+                      type="button"
+                      class="group rounded-full outline-none transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Copy address ${selectedRegister.absoluteAddressHex}`}
+                      title={copiedAddress === selectedRegister.absoluteAddressHex ? "Copied" : "Copy address"}
+                      onclick={() => copyAddress(selectedRegister.absoluteAddressHex || "")}
+                    >
+                      <Badge class="cursor-copy font-mono text-sm">
+                        {#if copiedAddress === selectedRegister.absoluteAddressHex}
+                          <span class="select-none">Copied</span>
+                        {:else}
+                          <span class="select-none" aria-hidden="true">@</span><span>{selectedRegister.absoluteAddressHex}</span>
+                        {/if}
+                      </Badge>
+                    </button>
+                  {/if}
+                </div>
+                <h2 id="register-title" class="text-3xl font-semibold tracking-tight md:text-4xl">
+                  {selectedRegister.name}
+                </h2>
+                <p class="mt-2 break-all font-mono text-xs text-muted-foreground">{selectedRegister.identifier}</p>
+              </div>
+            </div>
+
             {#if selectedRegister.description}
-              <div class="markdown mt-6 max-w-4xl text-sm md:text-base">
+              <div class="markdown mt-4 max-w-4xl text-sm md:text-base">
                 {@html renderMarkdown(selectedRegister.description)}
               </div>
             {/if}
 
-            <Separator class="my-8" />
+            <Separator class="my-5" />
             {@render registerLayout(selectedRegister)}
 
-            <div class="mt-8 space-y-5">
+            <div class="mt-5 space-y-4">
               {#each selectedRegister.fields as field (field.id)}
                 {@render fieldCard(field)}
               {/each}
