@@ -1,6 +1,7 @@
 @import "@fontsource-variable/rubik/wght.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 @import "tailwindcss";
+@import "tw-animate-css";
 @source "./";
 
 @custom-variant dark (&:is(.dark *));
