@@ -7,19 +7,21 @@
   import FolderTreeIcon from "@lucide/svelte/icons/folder-tree";
   import HashIcon from "@lucide/svelte/icons/hash";
   import MenuIcon from "@lucide/svelte/icons/menu";
-  import MoonIcon from "@lucide/svelte/icons/moon";
   import SearchIcon from "@lucide/svelte/icons/search";
-  import SunIcon from "@lucide/svelte/icons/sun";
+  import SettingsIcon from "@lucide/svelte/icons/settings";
   import { Effect } from "effect";
   import { onMount, tick } from "svelte";
 
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Input } from "$lib/components/ui/input";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
+  import * as Select from "$lib/components/ui/select";
   import { Separator } from "$lib/components/ui/separator";
   import * as Sheet from "$lib/components/ui/sheet";
+  import { Switch } from "$lib/components/ui/switch";
   import {
     Table,
     TableBody,
@@ -34,6 +36,12 @@
   import { makeSearchService, type SearchRecord } from "$lib/search";
 
   type Theme = "light" | "dark" | "system";
+  type BitLayoutItem =
+    | { kind: "field"; field: RegisterField }
+    | { kind: "gap"; low: number; high: number };
+  type FolderListItem =
+    | { kind: "node"; node: NavigationNode }
+    | { kind: "gap"; id: string; low: bigint; high: bigint };
 
   const registerDocument = readEmbeddedDocument();
   const searchService = Effect.runSync(makeSearchService(registerDocument));
@@ -57,6 +65,7 @@
   let activeSearchIndex = $state(-1);
   let sidebarWidth = $state(304);
   let copiedAddress = $state("");
+  let showReservedGaps = $state(true);
   let selectedRegister = $derived(registersById.get(selectedId));
   let selectedFolder = $derived(navigationById.get(selectedFolderId));
   let selectedBreadcrumbs = $derived(
@@ -76,6 +85,58 @@
 
   function fieldsMsbFirst(fields: ReadonlyArray<RegisterField>): RegisterField[] {
     return [...fields].sort((left, right) => right.high - left.high || right.low - left.low);
+  }
+
+  function bitLayoutItems(register: Register): BitLayoutItem[] {
+    const fields = fieldsMsbFirst(register.fields);
+    if (!showReservedGaps) return fields.map((field) => ({ kind: "field", field }));
+
+    const items: BitLayoutItem[] = [];
+    let nextHigh = register.width - 1;
+    for (const field of fields) {
+      if (field.high < nextHigh) items.push({ kind: "gap", low: field.high + 1, high: nextHigh });
+      items.push({ kind: "field", field });
+      nextHigh = Math.min(nextHigh, field.low - 1);
+    }
+    if (nextHigh >= 0) items.push({ kind: "gap", low: 0, high: nextHigh });
+    return items;
+  }
+
+  function bitGapLabel(low: number, high: number): string {
+    return low === high ? `${low}` : `${low}-${high}`;
+  }
+
+  function hex(value: bigint): string {
+    return `0x${value.toString(16)}`;
+  }
+
+  function addressGapLabel(low: bigint, high: bigint): string {
+    return low === high ? hex(low) : `${hex(low)}-${hex(high)}`;
+  }
+
+  function folderListItems(folder: NavigationNode): FolderListItem[] {
+    if (!showReservedGaps) return folder.children.map((node) => ({ kind: "node", node }));
+
+    const items: FolderListItem[] = [];
+    let previousEnd: bigint | null = null;
+    for (const node of folder.children) {
+      const register = node.targetId ? registersById.get(node.targetId) : undefined;
+      if (node.kind !== "register" || !register?.absoluteAddress) {
+        items.push({ kind: "node", node });
+        previousEnd = null;
+        continue;
+      }
+
+      const address = BigInt(register.absoluteAddress);
+      if (previousEnd !== null && address > previousEnd + 1n) {
+        const low = previousEnd + 1n;
+        items.push({ kind: "gap", id: `gap:${low}:${address - 1n}`, low, high: address - 1n });
+      }
+      items.push({ kind: "node", node });
+      const byteWidth = BigInt(Math.max(1, Math.ceil(register.width / 8)));
+      previousEnd = address + byteWidth - 1n;
+    }
+    return items;
   }
 
   async function copyAddress(address: string): Promise<void> {
@@ -194,8 +255,13 @@
     writePreference("peakrdl-theme", value);
   }
 
-  function cycleTheme(): void {
-    applyTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system");
+  function themeLabel(value: Theme): string {
+    return value[0].toUpperCase() + value.slice(1);
+  }
+
+  function setReservedGaps(checked: boolean): void {
+    showReservedGaps = checked;
+    writePreference("peakrdl-show-reserved-gaps", String(checked));
   }
 
   function resizeSidebar(width: number): void {
@@ -256,6 +322,8 @@
         removePreference("peakrdl-expanded");
       }
     }
+
+    showReservedGaps = readPreference("peakrdl-show-reserved-gaps") !== "false";
 
     applyHash();
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -349,9 +417,9 @@
 >
   <aside class="print-hidden sticky top-0 hidden h-screen border-r bg-card/70 backdrop-blur md:block">
     {@render navigationPanel()}
-    <button
-      type="button"
+    <div
       role="separator"
+      tabindex="0"
       aria-label="Resize sidebar"
       aria-orientation="vertical"
       aria-valuemin="240"
@@ -360,7 +428,7 @@
       class="absolute inset-y-0 -right-1 z-40 w-2 cursor-col-resize touch-none bg-transparent outline-none transition-colors hover:bg-primary/20 focus-visible:bg-primary/30"
       onpointerdown={startSidebarResize}
       onkeydown={handleSidebarResizeKey}
-    ></button>
+    ></div>
   </aside>
 
   <div class="min-w-0">
@@ -429,9 +497,57 @@
           </p>
         </div>
 
-        <Button variant="outline" size="icon" onclick={cycleTheme} aria-label={`Theme: ${theme}`}>
-          {#if theme === "dark"}<MoonIcon />{:else}<SunIcon />{/if}
-        </Button>
+        <Dialog.Root>
+          <Dialog.Trigger>
+            {#snippet child({ props })}
+              <Button {...props} variant="outline" size="icon" aria-label="Open settings">
+                <SettingsIcon />
+              </Button>
+            {/snippet}
+          </Dialog.Trigger>
+          <Dialog.Content class="border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
+            <Dialog.Header>
+              <Dialog.Title>Settings</Dialog.Title>
+              <Dialog.Description>Customize the register documentation view.</Dialog.Description>
+            </Dialog.Header>
+
+            <div class="space-y-4 py-2">
+              <div class="flex items-center justify-between gap-6">
+                <div>
+                  <p class="text-sm font-medium">Theme</p>
+                  <p class="text-xs text-muted-foreground">Choose the interface color mode.</p>
+                </div>
+                <Select.Root
+                  type="single"
+                  value={theme}
+                  onValueChange={(value) => applyTheme(value as Theme)}
+                >
+                  <Select.Trigger class="w-32 bg-background">{themeLabel(theme)}</Select.Trigger>
+                  <Select.Content class="bg-card text-card-foreground">
+                    <Select.Item value="light">Light</Select.Item>
+                    <Select.Item value="dark">Dark</Select.Item>
+                    <Select.Item value="system">System</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+              </div>
+
+              <Separator />
+
+              <div class="flex items-center justify-between gap-6">
+                <div>
+                  <p class="text-sm font-medium">Show reserved gaps</p>
+                  <p class="text-xs text-muted-foreground">Include reserved fields and register ranges.</p>
+                </div>
+                <Switch
+                  bind:checked={showReservedGaps}
+                  onCheckedChange={setReservedGaps}
+                  class="border-border ring-1 ring-border data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
+                  aria-label="Show reserved gaps"
+                />
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Root>
       </div>
     </header>
 
@@ -493,8 +609,12 @@
             {@render registerLayout(selectedRegister)}
 
             <div class="mt-5 space-y-4">
-              {#each fieldsMsbFirst(selectedRegister.fields) as field (field.id)}
-                {@render fieldCard(field)}
+              {#each bitLayoutItems(selectedRegister) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
+                {#if item.kind === "field"}
+                  {@render fieldCard(item.field)}
+                {:else}
+                  {@render reservedField(item.low, item.high)}
+                {/if}
               {/each}
             </div>
           </section>
@@ -522,24 +642,31 @@
 
     <Separator class="my-8" />
 
-    {#if folder.children.length}
+    {#if folderListItems(folder).length}
       <div class="grid gap-3">
-        {#each folder.children as child (child.id)}
-          <button
-            class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onclick={() => child.kind === "register" && child.targetId ? selectRegister(child.targetId) : selectFolder(child)}
-          >
-            <span class="grid size-9 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60">
-              {@render kindIcon(child)}
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block truncate font-medium">{child.label}</span>
-              <span class="mt-1 block truncate font-mono text-xs text-muted-foreground">
-                {child.kind === "register" ? child.address || child.identifier : `${child.children.length} items`}
+        {#each folderListItems(folder) as item (item.kind === "node" ? item.node.id : item.id)}
+          {#if item.kind === "node"}
+            <button
+              class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onclick={() => item.node.kind === "register" && item.node.targetId ? selectRegister(item.node.targetId) : selectFolder(item.node)}
+            >
+              <span class="grid size-9 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60">
+                {@render kindIcon(item.node)}
               </span>
-            </span>
-            <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground" />
-          </button>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate font-medium">{item.node.label}</span>
+                <span class="mt-1 block truncate font-mono text-xs text-muted-foreground">
+                  {item.node.kind === "register" ? item.node.address || item.node.identifier : `${item.node.children.length} items`}
+                </span>
+              </span>
+              <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground" />
+            </button>
+          {:else}
+            <div class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+              <span>Reserved</span>
+              <code>@{addressGapLabel(item.low, item.high)}</code>
+            </div>
+          {/if}
         {/each}
       </div>
     {:else}
@@ -562,20 +689,37 @@
         class="grid min-w-[42rem] gap-px overflow-hidden rounded-md bg-border"
         style={`grid-template-columns: repeat(${Math.max(register.width, 1)}, minmax(0, 1fr))`}
       >
-        {#each fieldsMsbFirst(register.fields) as field, index (field.id)}
-          <button
-            class={`row-start-1 min-h-16 overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
-            style={`grid-column: ${register.width - field.high} / ${register.width - field.low + 1}`}
-            title={`${field.name} [${bitRange(field)}]`}
-            onclick={() => document.getElementById(`field-${encodeURIComponent(field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
-          >
-            <span class="block truncate font-medium">{field.name}</span>
-            <span class="mt-1 block font-mono text-muted-foreground">[{bitRange(field)}]</span>
-          </button>
+        {#each bitLayoutItems(register) as item, index (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
+          {#if item.kind === "field"}
+            <button
+              class={`row-start-1 min-h-16 overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
+              style={`grid-column: ${register.width - item.field.high} / ${register.width - item.field.low + 1}`}
+              title={`${item.field.name} [${bitRange(item.field)}]`}
+              onclick={() => document.getElementById(`field-${encodeURIComponent(item.field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
+            >
+              <span class="block truncate font-medium">{item.field.name}</span>
+              <span class="mt-1 block font-mono text-muted-foreground">[{bitRange(item.field)}]</span>
+            </button>
+          {:else}
+            <div
+              class="row-start-1 grid min-h-16 place-content-center overflow-hidden border-y border-dashed border-border bg-muted/25 px-1 text-center text-[0.65rem] leading-tight text-muted-foreground"
+              style={`grid-column: ${register.width - item.high} / ${register.width - item.low + 1}`}
+            >
+              <span class="font-medium">Reserved</span>
+              <span class="mt-1 font-mono">[{bitGapLabel(item.low, item.high)}]</span>
+            </div>
+          {/if}
         {/each}
       </div>
     </div>
   </section>
+{/snippet}
+
+{#snippet reservedField(low: number, high: number)}
+  <div class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+    <span class="font-medium">Reserved</span>
+    <code>[{bitGapLabel(low, high)}]</code>
+  </div>
 {/snippet}
 
 {#snippet fieldCard(field: RegisterField)}

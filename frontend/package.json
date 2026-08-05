@@ -19,13 +19,13 @@
     "tailwind-merge": "latest"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@internationalized/date": "^3.12.0",
     "@lucide/svelte": "^1.28.0",
     "@sveltejs/adapter-static": "latest",
     "@sveltejs/kit": "latest",
     "@sveltejs/vite-plugin-svelte": "latest",
     "@tailwindcss/vite": "latest",
+    "@types/bun": "latest",
     "@types/markdown-it": "latest",
     "bits-ui": "^2.16.3",
     "svelte": "latest",
