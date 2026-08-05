@@ -251,9 +251,7 @@
 {#snippet navigationPanel()}
   <div class="flex h-full min-h-0 flex-col">
     <div class="px-4 pb-3 pt-5">
-      <p class="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-primary">Register map</p>
       <h1 class="mt-1 line-clamp-2 text-lg font-semibold leading-tight tracking-tight">{registerDocument.title}</h1>
-      <p class="mt-1 font-mono text-xs text-muted-foreground">{registerDocument.registers.length} registers</p>
     </div>
     <Separator />
     <ScrollArea class="min-h-0 flex-1 py-2">

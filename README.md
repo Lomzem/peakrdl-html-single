@@ -43,6 +43,7 @@ and FlexSearch. Use Bun for all frontend tasks:
 ```sh
 cd frontend
 bun install
+bun run dev
 bun run check
 bun test
 bun run build
@@ -51,6 +52,11 @@ bun run build
 `bun run build` creates the single-file frontend shell and copies it into the
 Python package. `bun run build:kit` also verifies the regular SvelteKit static
 build.
+
+During `bun run dev`, the Vite server uses `example-rdl/example.rdl` when that
+file exists. Frontend files keep normal HMR behavior. Changes to the example
+RDL trigger a page reload with newly compiled data. Set
+`PEAKRDL_HTML_SINGLE_PYTHON` to select a Python executable when needed.
 
 Run Python tests from the repository root:
 

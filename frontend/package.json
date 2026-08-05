@@ -10,6 +10,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "latest",
+    "@fontsource-variable/rubik": "latest",
     "effect": "latest",
     "flexsearch": "latest",
     "markdown-it": "latest",
