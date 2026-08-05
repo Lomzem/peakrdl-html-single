@@ -667,7 +667,7 @@
             bind:ref={searchInput}
             bind:value={query}
             class="h-9 bg-card pl-9 pr-16 font-mono text-sm"
-            placeholder="Search address, register, field, or enum…"
+            placeholder="Search address, register, field, or enum."
             aria-label="Search registers"
             aria-keyshortcuts="Control+K /"
             role="combobox"
@@ -725,7 +725,7 @@
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             {#snippet child({ props })}
-              <Button {...props} variant="outline" size="icon" aria-label="Open menu">
+              <Button {...props} variant="outline" size="icon" class="size-9 shrink-0" aria-label="Open menu">
                 <EllipsisVerticalIcon />
               </Button>
             {/snippet}
@@ -1032,7 +1032,7 @@
               <code>[{bitGapLabel(item.low, item.high)}]</code>
             </div>
           {:else}
-            <div class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-center">
+            <div class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-start">
               <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
                   <button
@@ -1046,7 +1046,7 @@
                 </div>
                 <p class="mt-0.5 truncate font-mono text-xs text-muted-foreground">{item.field.identifier}</p>
               </div>
-              <div>
+              <div class="grid gap-1">
                 {#if valueMode === "enum" && item.field.enum}
                   {@const value = fieldValue(register, item.field)}
                   {@const member = matchingEnumMember(item.field, value)}
@@ -1055,7 +1055,7 @@
                     value={value.toString()}
                     onValueChange={(selected) => updateFieldValue(register, item.field, BigInt(selected))}
                   >
-                    <Select.Trigger class="w-full bg-background">
+                    <Select.Trigger class="w-full bg-background font-mono">
                       {member?.displayName || `Unknown (${formatNumericValue(value, item.field.width, "hex")})`}
                     </Select.Trigger>
                     <Select.Content class="bg-card text-card-foreground">
@@ -1072,9 +1072,9 @@
                     oninput={(event) => updateFieldDraft(register, item.field, (event.currentTarget as HTMLInputElement).value)}
                   />
                 {/if}
-                <p class="mt-1 text-xs text-muted-foreground">{fieldResetLabel(item.field)}</p>
+                <p class="text-xs text-muted-foreground">{fieldResetLabel(item.field)}</p>
                 {#if fieldErrors[item.field.id]}
-                  <p class="mt-1 text-xs text-destructive">{fieldErrors[item.field.id]}</p>
+                  <p class="text-xs text-destructive">{fieldErrors[item.field.id]}</p>
                 {/if}
               </div>
             </div>
