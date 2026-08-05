@@ -55,9 +55,6 @@ Descriptions are rendered as Markdown. Raw HTML is disabled.
 
 ## Frontend development
 
-The frontend uses SvelteKit, TypeScript, Tailwind CSS, shadcn-svelte, Effect,
-and FlexSearch. Use Bun for all frontend tasks:
-
 ```sh
 cd frontend
 bun install
@@ -71,8 +68,7 @@ bun run build
 
 `bun run build` creates the single-file frontend shell and copies it into the
 Python package. `bun run build:kit` also verifies the regular SvelteKit static
-build. `bun run lint` checks ESLint and Prettier, while `bun run format` applies
-Prettier formatting. Husky runs the lint checks before each commit.
+build.
 
 During `bun run dev`, the Vite server uses `example-rdl/example.rdl` when that
 file exists. Frontend files keep normal HMR behavior. Changes to the example
