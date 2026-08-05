@@ -43,7 +43,10 @@ export default defineConfig(
     },
   },
   {
-    files: ["src/routes/+page.svelte"],
+    files: [
+      "src/lib/components/register-document/register-field-card.svelte",
+      "src/lib/components/register-document/register-view.svelte",
+    ],
     rules: {
       "svelte/no-at-html-tags": "off",
     },
