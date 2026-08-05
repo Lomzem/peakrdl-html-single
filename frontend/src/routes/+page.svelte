@@ -22,6 +22,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Input } from "$lib/components/ui/input";
+  import * as Kbd from "$lib/components/ui/kbd";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import * as Select from "$lib/components/ui/select";
   import { Separator } from "$lib/components/ui/separator";
@@ -642,7 +643,7 @@
           <Input
             bind:ref={searchInput}
             bind:value={query}
-            class="h-9 bg-card pl-9 font-mono text-sm"
+            class="h-9 bg-card pl-9 pr-16 font-mono text-sm"
             placeholder="Search address, register, field, or enum…"
             aria-label="Search registers"
             aria-keyshortcuts="Control+K /"
@@ -656,6 +657,7 @@
             oninput={() => (activeSearchIndex = -1)}
             onkeydown={handleSearchKeydown}
           />
+          <Kbd.Root class="absolute right-2 top-1/2 -translate-y-1/2">Ctrl K</Kbd.Root>
           {#if query.trim() && searchFocused}
             <div
               id="search-results"
