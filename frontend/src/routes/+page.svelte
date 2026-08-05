@@ -913,25 +913,7 @@
     </CardHeader>
 
     <CardContent class="p-4">
-      <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <label class="grid gap-1.5">
-          <span class="text-sm font-medium">Encoded register value</span>
-          <Input
-            value={encodedDraft}
-            class="font-mono"
-            aria-invalid={Boolean(encodedError)}
-            oninput={(event) => updateEncodedValue(register, (event.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
-        <Button variant="outline" onclick={() => copyEncodedValue(register)}>
-          {copiedEncodedValue ? "Copied" : "Copy"}
-        </Button>
-      </div>
-      {#if encodedError}
-        <p class="mt-1.5 text-xs text-destructive">{encodedError}</p>
-      {/if}
-
-      <div class="mt-4 overflow-hidden rounded-lg border">
+      <div class="overflow-hidden rounded-lg border">
         {#each bitLayoutItems(register) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
           {#if item.kind === "gap"}
             <div class="flex items-center justify-between border-b border-dashed bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground last:border-b-0">
@@ -988,6 +970,24 @@
           {/if}
         {/each}
       </div>
+
+      <div class="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <label class="grid gap-1.5">
+          <span class="text-sm font-medium">Encoded register value</span>
+          <Input
+            value={encodedDraft}
+            class="font-mono"
+            aria-invalid={Boolean(encodedError)}
+            oninput={(event) => updateEncodedValue(register, (event.currentTarget as HTMLInputElement).value)}
+          />
+        </label>
+        <Button variant="outline" onclick={() => copyEncodedValue(register)}>
+          {copiedEncodedValue ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      {#if encodedError}
+        <p class="mt-1.5 text-xs text-destructive">{encodedError}</p>
+      {/if}
     </CardContent>
   </Card>
 {/snippet}
