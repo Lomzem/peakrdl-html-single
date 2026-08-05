@@ -106,6 +106,29 @@
     searchInput?.select();
   }
 
+  function matchedTextParts(value: string, search: string): Array<{ text: string; matched: boolean }> {
+    const needle = search.toLowerCase().replace(/\s+/g, "");
+    if (!needle) return [{ text: value, matched: false }];
+
+    const matched = new Set<number>();
+    let start = 0;
+    for (const character of needle) {
+      const index = value.toLowerCase().indexOf(character, start);
+      if (index === -1) return [{ text: value, matched: false }];
+      matched.add(index);
+      start = index + 1;
+    }
+
+    const parts: Array<{ text: string; matched: boolean }> = [];
+    for (let index = 0; index < value.length; index += 1) {
+      const isMatched = matched.has(index);
+      const previous = parts.at(-1);
+      if (previous?.matched === isMatched) previous.text += value[index];
+      else parts.push({ text: value[index], matched: isMatched });
+    }
+    return parts;
+  }
+
   createHotkey("Control+K", focusSearch);
   createHotkey("/", focusSearch);
   createHotkey(
@@ -676,8 +699,16 @@
                   >
                     <Badge variant="outline" class="mt-0.5 justify-self-start capitalize">{result.kind.replace("-", " ")}</Badge>
                     <span class="min-w-0 flex-1">
-                      <span class="block truncate text-sm font-medium leading-5">{result.label}</span>
-                      <span class="mt-0.5 block truncate font-mono text-xs leading-4 text-muted-foreground">{result.context}</span>
+                      <span class="block truncate text-sm font-medium leading-5 text-muted-foreground">
+                        {#each matchedTextParts(result.label, query) as part}
+                          <span class:text-primary={part.matched}>{part.text}</span>
+                        {/each}
+                      </span>
+                      <span class="mt-0.5 block truncate font-mono text-xs leading-4 text-muted-foreground">
+                        {#each matchedTextParts(result.context, query) as part}
+                          <span class:text-primary={part.matched}>{part.text}</span>
+                        {/each}
+                      </span>
                     </span>
                   </button>
                 {/each}

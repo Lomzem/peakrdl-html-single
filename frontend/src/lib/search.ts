@@ -130,6 +130,31 @@ function normalizeAddress(value: string): string | null {
   return null;
 }
 
+function fuzzyScore(candidate: string, query: string): number | null {
+  const haystack = candidate.toLowerCase();
+  const needle = query.toLowerCase().replace(/\s+/g, "");
+  if (!needle) return null;
+
+  let score = haystack.length * 0.05;
+  let previous = -1;
+  for (const character of needle) {
+    const index = haystack.indexOf(character, previous + 1);
+    if (index === -1) return null;
+
+    const gap = index - previous - 1;
+    score += gap * 2;
+    if (index === previous + 1) score -= 6;
+    if (index === 0 || /[\s._\-/:\[\]()]/.test(haystack[index - 1] || "")) score -= 8;
+    previous = index;
+  }
+
+  const compact = haystack.replace(/[^\p{L}\p{N}]+/gu, "");
+  if (compact === needle) score -= 800;
+  else if (haystack === query.toLowerCase()) score -= 1000;
+  else if (haystack.startsWith(query.toLowerCase())) score -= 300;
+  return score;
+}
+
 export class SearchService {
   readonly records: ReadonlyMap<string, SearchRecord>;
   readonly index: Document;
@@ -159,19 +184,37 @@ export class SearchService {
     groups.forEach((group, fieldIndex) => {
       group.result.forEach((id, resultIndex) => {
         const key = String(id);
-        const score = fieldIndex * this.records.size + resultIndex;
+        const score = 1000 + fieldIndex * this.records.size + resultIndex;
         scores.set(key, Math.min(scores.get(key) ?? Number.POSITIVE_INFINITY, score));
       });
     });
 
     for (const record of this.records.values()) {
       if (!record.targetId) continue;
-      const label = record.label.toLowerCase();
-      if (label === normalizedQuery) scores.set(record.id, -90);
-      else if (label.startsWith(normalizedQuery)) scores.set(record.id, Math.min(scores.get(record.id) ?? 0, -70));
+      const candidates: Array<[string, number]> = [
+        [record.label, 0],
+        [record.address, 2],
+        [record.field, 4],
+        [record.enum, 4],
+        [record.identifier, 6],
+        [record.group, 8],
+        [record.context, 10],
+        [record.text, 12],
+        [record.description, 14]
+      ];
+      for (const [candidate, priority] of candidates) {
+        if (!candidate) continue;
+        const match = fuzzyScore(candidate, normalizedQuery);
+        if (match !== null) {
+          scores.set(
+            record.id,
+            Math.min(scores.get(record.id) ?? Number.POSITIVE_INFINITY, match + priority)
+          );
+        }
+      }
       if (normalized !== null && record.kind === "register") {
         const numeric = record.address.split(" ").at(-1);
-        if (numeric === normalized) scores.set(record.id, -100);
+        if (numeric === normalized) scores.set(record.id, -2000);
       }
     }
 
