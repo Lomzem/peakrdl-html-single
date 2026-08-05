@@ -74,6 +74,10 @@
     return field.high === field.low ? `${field.low}` : `${field.high}:${field.low}`;
   }
 
+  function fieldsMsbFirst(fields: ReadonlyArray<RegisterField>): RegisterField[] {
+    return [...fields].sort((left, right) => right.high - left.high || right.low - left.low);
+  }
+
   async function copyAddress(address: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(address);
@@ -489,7 +493,7 @@
             {@render registerLayout(selectedRegister)}
 
             <div class="mt-5 space-y-4">
-              {#each selectedRegister.fields as field (field.id)}
+              {#each fieldsMsbFirst(selectedRegister.fields) as field (field.id)}
                 {@render fieldCard(field)}
               {/each}
             </div>
@@ -548,19 +552,17 @@
 
 {#snippet registerLayout(register: Register)}
   <section aria-labelledby="bit-layout-title">
-    <div class="mb-3 flex items-end justify-between gap-4">
+    <div class="mb-3">
       <div>
-        <p class="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary">Bit layout</p>
-        <h3 id="bit-layout-title" class="mt-1 text-lg font-semibold">{register.width} bits</h3>
+        <p id="bit-layout-title" class="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary">Bit layout</p>
       </div>
-      <p class="font-mono text-xs text-muted-foreground">MSB {Math.max(register.width - 1, 0)} · LSB 0</p>
     </div>
     <div class="overflow-x-auto rounded-lg border bg-card p-3">
       <div
         class="grid min-w-[42rem] gap-px overflow-hidden rounded-md bg-border"
         style={`grid-template-columns: repeat(${Math.max(register.width, 1)}, minmax(0, 1fr))`}
       >
-        {#each register.fields as field, index (field.id)}
+        {#each fieldsMsbFirst(register.fields) as field, index (field.id)}
           <button
             class={`row-start-1 min-h-16 overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
             style={`grid-column: ${register.width - field.high} / ${register.width - field.low + 1}`}
@@ -581,8 +583,8 @@
     <CardHeader class="border-b bg-muted/25 p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
-          <p class="font-mono text-xs text-primary">[{bitRange(field)}] · {field.identifier}</p>
-          <h3 class="mt-1 text-xl font-semibold tracking-tight">{field.name}</h3>
+          <h3 class="text-xl font-semibold tracking-tight">{field.name}</h3>
+          <p class="mt-1 font-mono text-xs text-primary">[{bitRange(field)}] · {field.identifier}</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <Badge variant="secondary">{field.width} bit{field.width === 1 ? "" : "s"}</Badge>
