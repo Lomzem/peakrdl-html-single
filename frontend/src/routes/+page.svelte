@@ -672,7 +672,7 @@
               </Button>
             {/snippet}
           </Dialog.Trigger>
-          <Dialog.Content class="border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
+          <Dialog.Content class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
             <Dialog.Header>
               <Dialog.Title>Settings</Dialog.Title>
               <Dialog.Description>Customize the register documentation view.</Dialog.Description>
@@ -712,6 +712,27 @@
                   aria-label="Show reserved gaps"
                 />
               </div>
+
+              <Separator />
+
+              <section aria-labelledby="about-title">
+                <h3 id="about-title" class="text-sm font-semibold">About</h3>
+                <dl class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-xs">
+                  <dt class="text-muted-foreground">Generator</dt>
+                  <dd>PeakRDL HTML Single</dd>
+                  <dt class="text-muted-foreground">Document</dt>
+                  <dd class="truncate" title={registerDocument.title}>{registerDocument.title}</dd>
+                  <dt class="text-muted-foreground">Format</dt>
+                  <dd>{registerDocument.formatVersion}</dd>
+                  {#each registerDocument.metadata as item (`${item.label}:${item.value}`)}
+                    <dt class="text-muted-foreground">{item.label}</dt>
+                    <dd class="whitespace-pre-wrap break-all font-mono">{item.value}</dd>
+                  {/each}
+                </dl>
+                {#if !registerDocument.metadata.length}
+                  <p class="mt-3 text-xs text-muted-foreground">No build metadata was embedded.</p>
+                {/if}
+              </section>
             </div>
           </Dialog.Content>
         </Dialog.Root>

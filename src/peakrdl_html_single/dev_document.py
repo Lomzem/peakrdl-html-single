@@ -13,7 +13,9 @@ def compile_document(source: str | Path) -> str:
     compiler = RDLCompiler()
     compiler.compile_file(Path(source))
     top_node = compiler.elaborate().top
-    return _safe_json(build_document_model(top_node))
+    document = build_document_model(top_node)
+    document["metadata"] = []
+    return _safe_json(document)
 
 
 def main() -> None:

@@ -8,6 +8,7 @@ const document: RegisterDocument = {
   title: "Sample map",
   description: "",
   rootPath: "sample",
+  metadata: [],
   navigation: {
     id: "addrmap:sample",
     kind: "addrmap",

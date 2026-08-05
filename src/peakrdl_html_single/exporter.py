@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from importlib.resources import files
 from pathlib import Path
 
@@ -21,7 +22,12 @@ def _safe_json(value: object) -> str:
 
 
 class HtmlSingleExporter:
-    def export(self, top_node: AddrmapNode, output: str | Path) -> None:
+    def export(
+        self,
+        top_node: AddrmapNode,
+        output: str | Path,
+        metadata: Mapping[str, object] | None = None,
+    ) -> None:
         template = files("peakrdl_html_single").joinpath("template.html").read_text(
             encoding="utf-8"
         )
@@ -29,6 +35,10 @@ class HtmlSingleExporter:
             raise RuntimeError("Packaged HTML template has an invalid data marker")
 
         document = build_document_model(top_node)
+        document["metadata"] = [
+            {"label": str(label), "value": str(value)}
+            for label, value in (metadata or {}).items()
+        ]
         html = template.replace(DATA_MARKER, _safe_json(document))
         output_path = Path(output)
         output_path.parent.mkdir(parents=True, exist_ok=True)

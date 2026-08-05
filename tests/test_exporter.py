@@ -10,7 +10,11 @@ from .test_model import RDL_SOURCE, _compile
 
 def test_export_injects_data_into_one_html_file(tmp_path: Path) -> None:
     output = tmp_path / "registers.html"
-    HtmlSingleExporter().export(_compile(tmp_path), output)
+    HtmlSingleExporter().export(
+        _compile(tmp_path),
+        output,
+        metadata={"Git commit": "0123456789abcdef", "Commit message": "Update registers"},
+    )
 
     html = output.read_text(encoding="utf-8")
     assert DATA_MARKER not in html
@@ -26,6 +30,10 @@ def test_export_injects_data_into_one_html_file(tmp_path: Path) -> None:
     document = json.loads(match.group(1))
     assert document["formatVersion"] == 1
     assert len(document["registers"]) == 4
+    assert document["metadata"] == [
+        {"label": "Git commit", "value": "0123456789abcdef"},
+        {"label": "Commit message", "value": "Update registers"},
+    ]
 
 
 def test_dev_document_emits_the_same_json_model(tmp_path: Path) -> None:

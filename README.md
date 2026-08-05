@@ -13,6 +13,18 @@ The exporter is under active development. Its command is:
 peakrdl html-single input.rdl -o registers.html
 ```
 
+CI pipelines can embed build information with repeatable metadata arguments:
+
+```sh
+peakrdl html-single input.rdl -o registers.html \
+  --metadata "Git commit=$GIT_COMMIT" \
+  --metadata "Commit message=$GIT_COMMIT_MESSAGE"
+```
+
+Use `--metadata-file build-metadata.json` to load a JSON object instead. Values
+from `--metadata` override matching labels from the file. Embedded values are
+shown in the Settings dialog under About.
+
 The optional `doc_group` register property augments the SystemRDL hierarchy.
 Slash-separated values add documentation groups beneath each register's real
 structural parent. Registers without the property remain direct children of

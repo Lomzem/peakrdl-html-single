@@ -66,6 +66,7 @@ export interface RegisterDocument {
   readonly title: string;
   readonly description: string;
   readonly rootPath: string;
+  readonly metadata: ReadonlyArray<Readonly<{ label: string; value: string }>>;
   readonly navigation: NavigationNode;
   readonly registers: ReadonlyArray<Register>;
 }
@@ -142,6 +143,7 @@ export const RegisterDocumentSchema: Schema.Schema<RegisterDocument> = Schema.St
   title: Schema.String,
   description: Schema.String,
   rootPath: Schema.String,
+  metadata: Schema.Array(Schema.Struct({ label: Schema.String, value: Schema.String })),
   navigation: NavigationNodeSchema,
   registers: Schema.Array(RegisterSchema)
 });
@@ -201,6 +203,7 @@ const emptyDocument: RegisterDocument = {
   title: "Register documentation",
   description: "Build the document with PeakRDL to view register data.",
   rootPath: "root",
+  metadata: [],
   navigation: {
     id: "addrmap:root",
     kind: "addrmap",
