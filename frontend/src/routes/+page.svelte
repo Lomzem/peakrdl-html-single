@@ -38,15 +38,18 @@
   const registerDocument = readEmbeddedDocument();
   const searchService = Effect.runSync(makeSearchService(registerDocument));
   const registersById = new Map(registerDocument.registers.map((register) => [register.id, register]));
+  const navigationById = new Map<string, NavigationNode>();
   const ancestorIds = new Map<string, string[]>();
 
   function recordAncestors(node: NavigationNode, ancestors: string[]): void {
+    navigationById.set(node.id, node);
     if (node.targetId) ancestorIds.set(node.targetId, ancestors);
     for (const child of node.children) recordAncestors(child, [...ancestors, node.id]);
   }
   recordAncestors(registerDocument.navigation, []);
 
   let selectedId = $state(registerDocument.registers[0]?.id || "");
+  let selectedFolderId = $state("");
   let expanded = $state<Set<string>>(new Set([registerDocument.navigation.id]));
   let query = $state("");
   let mobileNavigationOpen = $state(false);
@@ -54,6 +57,7 @@
   let activeSearchIndex = $state(-1);
   let sidebarWidth = $state(304);
   let selectedRegister = $derived(registersById.get(selectedId));
+  let selectedFolder = $derived(navigationById.get(selectedFolderId));
   let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
 
   function accessLabel(value: string): string {
@@ -85,6 +89,7 @@
   async function selectRegister(id: string, fieldId = "", writeHash = true): Promise<void> {
     if (!registersById.has(id)) return;
     selectedId = id;
+    selectedFolderId = "";
     expandToRegister(id);
     mobileNavigationOpen = false;
     query = "";
@@ -100,14 +105,28 @@
     }
   }
 
+  async function selectFolder(node: NavigationNode, writeHash = true): Promise<void> {
+    selectedId = "";
+    selectedFolderId = node.id;
+    expanded = new Set([...expanded, node.id]);
+    mobileNavigationOpen = false;
+    query = "";
+    if (writeHash) location.hash = new URLSearchParams({ folder: node.id }).toString();
+    await tick();
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function selectSearchResult(result: SearchRecord): void {
     void selectRegister(result.targetId, result.fieldId);
   }
 
   function applyHash(): void {
     const parameters = new URLSearchParams(location.hash.slice(1));
+    const folderId = parameters.get("folder");
     const id = parameters.get("register");
-    if (id) void selectRegister(id, parameters.get("field") || "", false);
+    const folder = folderId ? navigationById.get(folderId) : undefined;
+    if (folder) void selectFolder(folder, false);
+    else if (id) void selectRegister(id, parameters.get("field") || "", false);
     else if (registerDocument.registers[0]) {
       void selectRegister(registerDocument.registers[0].id, "", false);
     }
@@ -248,23 +267,31 @@
       aria-current={selectedId === node.targetId ? "page" : undefined}
       onclick={() => selectRegister(node.targetId || "")}
     >
-      {@render kindIcon(node)}
       <span class="min-w-0 flex-1 truncate">{node.label}</span>
       {#if node.address}<span class="font-mono text-[0.68rem] text-muted-foreground">{node.address}</span>{/if}
     </Button>
   {:else}
-    <Button
-      variant="ghost"
-      size="sm"
-      class="h-auto min-h-7 w-full justify-start gap-1.5 py-1 pr-2 text-left font-medium"
-      style={`padding-left: ${0.25 + depth * 0.85}rem`}
-      aria-expanded={expanded.has(node.id)}
-      onclick={() => toggleNode(node.id)}
-    >
-      <ChevronRightIcon class={`size-3.5 transition-transform ${expanded.has(node.id) ? "rotate-90" : ""}`} />
-      {@render kindIcon(node)}
-      <span class="min-w-0 flex-1 truncate">{node.label}</span>
-    </Button>
+    <div class="flex min-h-7 w-full items-center pr-2" style={`padding-left: ${0.25 + depth * 0.85}rem`}>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        class="shrink-0"
+        aria-label={`${expanded.has(node.id) ? "Collapse" : "Expand"} ${node.label}`}
+        aria-expanded={expanded.has(node.id)}
+        onclick={() => toggleNode(node.id)}
+      >
+        <ChevronRightIcon class={`size-3.5 transition-transform ${expanded.has(node.id) ? "rotate-90" : ""}`} />
+      </Button>
+      <Button
+        variant={selectedFolderId === node.id ? "secondary" : "ghost"}
+        size="sm"
+        class="h-auto min-h-7 min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-1 text-left font-medium"
+        aria-current={selectedFolderId === node.id ? "page" : undefined}
+        onclick={() => selectFolder(node)}
+      >
+        <span class="min-w-0 flex-1 truncate">{node.label}</span>
+      </Button>
+    </div>
     {#if expanded.has(node.id)}
       {#each node.children as child (child.id)}
         {@render navigationNode(child, depth + 1)}
@@ -440,6 +467,8 @@
               {/each}
             </div>
           </section>
+        {:else if selectedFolder}
+          {@render folderView(selectedFolder)}
         {:else}
           <div class="grid min-h-[55vh] place-items-center text-center">
             <div>
@@ -453,6 +482,42 @@
     </main>
   </div>
 </div>
+
+{#snippet folderView(folder: NavigationNode)}
+  <section aria-labelledby="folder-title">
+    {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
+    <h2 id="folder-title" class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{folder.label}</h2>
+    <p class="mt-2 break-all font-mono text-xs text-muted-foreground">{folder.identifier}</p>
+
+    <Separator class="my-8" />
+
+    {#if folder.children.length}
+      <div class="grid gap-3">
+        {#each folder.children as child (child.id)}
+          <button
+            class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onclick={() => child.kind === "register" && child.targetId ? selectRegister(child.targetId) : selectFolder(child)}
+          >
+            <span class="grid size-9 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60">
+              {@render kindIcon(child)}
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate font-medium">{child.label}</span>
+              <span class="mt-1 block truncate font-mono text-xs text-muted-foreground">
+                {child.kind === "register" ? child.address || child.identifier : `${child.children.length} items`}
+              </span>
+            </span>
+            <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground" />
+          </button>
+        {/each}
+      </div>
+    {:else}
+      <div class="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
+        This folder is empty.
+      </div>
+    {/if}
+  </section>
+{/snippet}
 
 {#snippet registerLayout(register: Register)}
   <section aria-labelledby="bit-layout-title">
