@@ -32,10 +32,13 @@ their structural parent.
 
 ## Installation
 
-Install the Python package, then run the exporter through PeakRDL:
+Install the latest version from GitHub in a virtual environment, then run the
+exporter through PeakRDL:
 
 ```sh
-python -m pip install .
+uv venv
+source .venv/bin/activate
+uv pip install "git+https://github.com/Lomzem/peakrdl-html-single.git"
 peakrdl html-single input.rdl -o registers.html
 ```
 
