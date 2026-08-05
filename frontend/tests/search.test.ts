@@ -15,7 +15,7 @@ const document: RegisterDocument = {
     label: "Sample map",
     identifier: "sample",
     address: "0x0",
-    children: []
+    children: [],
   },
   registers: [
     {
@@ -52,14 +52,26 @@ const document: RegisterDocument = {
           enum: {
             name: "mode_e",
             members: [
-              { name: "IDLE", displayName: "Idle", value: "0", hex: "0x0", description: "No operation" },
-              { name: "ACTIVE", displayName: "Active", value: "1", hex: "0x1", description: "Normal operation" }
-            ]
-          }
-        }
-      ]
-    }
-  ]
+              {
+                name: "IDLE",
+                displayName: "Idle",
+                value: "0",
+                hex: "0x0",
+                description: "No operation",
+              },
+              {
+                name: "ACTIVE",
+                displayName: "Active",
+                value: "1",
+                hex: "0x1",
+                description: "Normal operation",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  ],
 };
 
 describe("search records", () => {

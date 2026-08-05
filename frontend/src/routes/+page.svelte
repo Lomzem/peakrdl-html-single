@@ -44,8 +44,7 @@
     type Theme = "light" | "dark" | "system";
     type ValueMode = "binary" | "hex" | "decimal" | "enum";
     type BitLayoutItem =
-        | { kind: "field"; field: RegisterField }
-        | { kind: "gap"; low: number; high: number };
+        { kind: "field"; field: RegisterField } | { kind: "gap"; low: number; high: number };
     type FolderListItem =
         | { kind: "node"; node: NavigationNode }
         | { kind: "gap"; id: string; low: bigint; high: bigint };
@@ -56,10 +55,7 @@
         registerDocument.registers.map((register) => [register.id, register]),
     );
     const resetValuesById = new Map(
-        registerDocument.registers.map((register) => [
-            register.id,
-            resetRegisterValue(register),
-        ]),
+        registerDocument.registers.map((register) => [register.id, resetRegisterValue(register)]),
     );
     const navigationById = new Map<string, NavigationNode>();
     const ancestorIds = new Map<string, string[]>();
@@ -67,16 +63,13 @@
     function recordAncestors(node: NavigationNode, ancestors: string[]): void {
         navigationById.set(node.id, node);
         if (node.targetId) ancestorIds.set(node.targetId, ancestors);
-        for (const child of node.children)
-            recordAncestors(child, [...ancestors, node.id]);
+        for (const child of node.children) recordAncestors(child, [...ancestors, node.id]);
     }
     recordAncestors(registerDocument.navigation, []);
 
     let selectedId = $state(registerDocument.registers[0]?.id || "");
     let selectedFolderId = $state("");
-    let expanded = $state<Set<string>>(
-        new Set([registerDocument.navigation.id]),
-    );
+    let expanded = $state<Set<string>>(new Set([registerDocument.navigation.id]));
     let query = $state("");
     let mobileNavigationOpen = $state(false);
     let theme = $state<Theme>("system");
@@ -109,13 +102,9 @@
     let selectedBreadcrumbs = $derived(
         (ancestorIds.get(selectedId) || [])
             .map((id) => navigationById.get(id))
-            .filter(
-                (node): node is NavigationNode => node?.kind === "doc-group",
-            ),
+            .filter((node): node is NavigationNode => node?.kind === "doc-group"),
     );
-    let searchResults = $derived(
-        query.trim() ? searchService.search(query.trim()) : [],
-    );
+    let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
 
     function focusSearch(): void {
         searchInput?.focus();
@@ -164,17 +153,11 @@
     }
 
     function bitRange(field: RegisterField): string {
-        return field.high === field.low
-            ? `${field.low}`
-            : `${field.high}:${field.low}`;
+        return field.high === field.low ? `${field.low}` : `${field.high}:${field.low}`;
     }
 
-    function fieldsMsbFirst(
-        fields: ReadonlyArray<RegisterField>,
-    ): RegisterField[] {
-        return [...fields].sort(
-            (left, right) => right.high - left.high || right.low - left.low,
-        );
+    function fieldsMsbFirst(fields: ReadonlyArray<RegisterField>): RegisterField[] {
+        return [...fields].sort((left, right) => right.high - left.high || right.low - left.low);
     }
 
     function valueMask(width: number): bigint {
@@ -185,26 +168,17 @@
         let value = 0n;
         for (const field of register.fields) {
             if (!field.reset) continue;
-            value |=
-                (BigInt(field.reset.value) & valueMask(field.width)) <<
-                BigInt(field.low);
+            value |= (BigInt(field.reset.value) & valueMask(field.width)) << BigInt(field.low);
         }
         return value & valueMask(register.width);
     }
 
     function registerValue(register: Register): bigint {
-        return (
-            registerValues.get(register.id) ??
-            resetValuesById.get(register.id) ??
-            0n
-        );
+        return registerValues.get(register.id) ?? resetValuesById.get(register.id) ?? 0n;
     }
 
     function fieldValue(register: Register, field: RegisterField): bigint {
-        return (
-            (registerValue(register) >> BigInt(field.low)) &
-            valueMask(field.width)
-        );
+        return (registerValue(register) >> BigInt(field.low)) & valueMask(field.width);
     }
 
     function numericMode(mode: ValueMode): "binary" | "hex" | "decimal" {
@@ -218,16 +192,11 @@
         mode: "binary" | "hex" | "decimal",
     ): string {
         if (mode === "decimal") return value.toString(10);
-        if (mode === "binary")
-            return `0b${value.toString(2).padStart(Math.max(1, width), "0")}`;
+        if (mode === "binary") return `0b${value.toString(2).padStart(Math.max(1, width), "0")}`;
         return `0x${value.toString(16).padStart(Math.max(1, Math.ceil(width / 4)), "0")}`;
     }
 
-    function formatRegisterValue(
-        register: Register,
-        value: bigint,
-        mode: ValueMode,
-    ): string {
+    function formatRegisterValue(register: Register, value: bigint, mode: ValueMode): string {
         return formatNumericValue(value, register.width, numericMode(mode));
     }
 
@@ -255,31 +224,19 @@
         const needsPrefix =
             (mode === "hex" && !value.toLowerCase().startsWith("0x")) ||
             (mode === "binary" && !value.toLowerCase().startsWith("0b"));
-        const parsed = BigInt(
-            needsPrefix ? `${mode === "binary" ? "0b" : "0x"}${value}` : value,
-        );
-        if (parsed > valueMask(width))
-            throw new Error(`Value exceeds ${width} bits.`);
+        const parsed = BigInt(needsPrefix ? `${mode === "binary" ? "0b" : "0x"}${value}` : value);
+        if (parsed > valueMask(width)) throw new Error(`Value exceeds ${width} bits.`);
         return parsed;
     }
 
     function matchingEnumMember(field: RegisterField, value: bigint) {
-        return field.enum?.members.find(
-            (member) => BigInt(member.value) === value,
-        );
+        return field.enum?.members.find((member) => BigInt(member.value) === value);
     }
 
-    function fieldEditorValue(
-        register: Register,
-        field: RegisterField,
-    ): string {
+    function fieldEditorValue(register: Register, field: RegisterField): string {
         return (
             fieldDrafts[field.id] ??
-            formatNumericValue(
-                fieldValue(register, field),
-                field.width,
-                numericMode(valueMode),
-            )
+            formatNumericValue(fieldValue(register, field), field.width, numericMode(valueMode))
         );
     }
 
@@ -300,11 +257,7 @@
     }
 
     function syncValueEditor(register: Register): void {
-        encodedDraft = formatRegisterValue(
-            register,
-            registerValue(register),
-            valueMode,
-        );
+        encodedDraft = formatRegisterValue(register, registerValue(register), valueMode);
         encodedError = "";
         fieldDrafts = {};
         fieldErrors = {};
@@ -319,26 +272,17 @@
     function updateEncodedValue(register: Register, input: string): void {
         encodedDraft = input;
         try {
-            const value = parseNumericValue(
-                input,
-                numericMode(valueMode),
-                register.width,
-            );
+            const value = parseNumericValue(input, numericMode(valueMode), register.width);
             setRegisterValue(register, value);
             encodedError = "";
             fieldDrafts = {};
             fieldErrors = {};
         } catch (error) {
-            encodedError =
-                error instanceof Error ? error.message : "Invalid value.";
+            encodedError = error instanceof Error ? error.message : "Invalid value.";
         }
     }
 
-    function updateFieldValue(
-        register: Register,
-        field: RegisterField,
-        value: bigint,
-    ): void {
+    function updateFieldValue(register: Register, field: RegisterField, value: bigint): void {
         const shiftedMask = valueMask(field.width) << BigInt(field.low);
         const encoded =
             (registerValue(register) & ~shiftedMask) |
@@ -347,26 +291,18 @@
         encodedDraft = formatRegisterValue(register, encoded, valueMode);
     }
 
-    function updateFieldDraft(
-        register: Register,
-        field: RegisterField,
-        input: string,
-    ): void {
+    function updateFieldDraft(register: Register, field: RegisterField, input: string): void {
         fieldDrafts = { ...fieldDrafts, [field.id]: input };
         try {
-            const value = parseNumericValue(
-                input,
-                numericMode(valueMode),
-                field.width,
-            );
+            const value = parseNumericValue(input, numericMode(valueMode), field.width);
             updateFieldValue(register, field, value);
-            const { [field.id]: _, ...remaining } = fieldErrors;
+            const remaining = { ...fieldErrors };
+            delete remaining[field.id];
             fieldErrors = remaining;
         } catch (error) {
             fieldErrors = {
                 ...fieldErrors,
-                [field.id]:
-                    error instanceof Error ? error.message : "Invalid value.",
+                [field.id]: error instanceof Error ? error.message : "Invalid value.",
             };
         }
     }
@@ -377,11 +313,7 @@
     }
 
     async function copyEncodedValue(register: Register): Promise<void> {
-        const value = formatRegisterValue(
-            register,
-            registerValue(register),
-            valueMode,
-        );
+        const value = formatRegisterValue(register, registerValue(register), valueMode);
         try {
             await navigator.clipboard.writeText(value);
         } catch {
@@ -398,8 +330,7 @@
 
     function bitLayoutItems(register: Register): BitLayoutItem[] {
         const fields = fieldsMsbFirst(register.fields);
-        if (!showReservedGaps)
-            return fields.map((field) => ({ kind: "field", field }));
+        if (!showReservedGaps) return fields.map((field) => ({ kind: "field", field }));
 
         const items: BitLayoutItem[] = [];
         let nextHigh = register.width - 1;
@@ -430,15 +361,12 @@
     }
 
     function folderListItems(folder: NavigationNode): FolderListItem[] {
-        if (!showReservedGaps)
-            return folder.children.map((node) => ({ kind: "node", node }));
+        if (!showReservedGaps) return folder.children.map((node) => ({ kind: "node", node }));
 
         const items: FolderListItem[] = [];
         let previousEnd: bigint | null = null;
         for (const node of folder.children) {
-            const register = node.targetId
-                ? registersById.get(node.targetId)
-                : undefined;
+            const register = node.targetId ? registersById.get(node.targetId) : undefined;
             if (node.kind !== "register" || !register?.absoluteAddress) {
                 items.push({ kind: "node", node });
                 previousEnd = null;
@@ -456,9 +384,7 @@
                 });
             }
             items.push({ kind: "node", node });
-            const byteWidth = BigInt(
-                Math.max(1, Math.ceil(register.width / 8)),
-            );
+            const byteWidth = BigInt(Math.max(1, Math.ceil(register.width / 8)));
             previousEnd = address + byteWidth - 1n;
         }
         return items;
@@ -501,11 +427,7 @@
         return parameters.toString();
     }
 
-    async function selectRegister(
-        id: string,
-        fieldId = "",
-        writeHash = true,
-    ): Promise<void> {
+    async function selectRegister(id: string, fieldId = "", writeHash = true): Promise<void> {
         const register = registersById.get(id);
         if (!register) return;
         selectedId = id;
@@ -517,34 +439,24 @@
         if (writeHash) location.hash = hashFor(id, fieldId);
         await tick();
         if (fieldId) {
-            document
-                .getElementById(`field-${encodeURIComponent(fieldId)}`)
-                ?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                });
+            document.getElementById(`field-${encodeURIComponent(fieldId)}`)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
         } else {
-            document
-                .querySelector("main")
-                ?.scrollTo({ top: 0, behavior: "smooth" });
+            document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
         }
     }
 
-    async function selectFolder(
-        node: NavigationNode,
-        writeHash = true,
-    ): Promise<void> {
+    async function selectFolder(node: NavigationNode, writeHash = true): Promise<void> {
         selectedId = "";
         selectedFolderId = node.id;
         expanded = new Set([...expanded, node.id]);
         mobileNavigationOpen = false;
         query = "";
-        if (writeHash)
-            location.hash = new URLSearchParams({ folder: node.id }).toString();
+        if (writeHash) location.hash = new URLSearchParams({ folder: node.id }).toString();
         await tick();
-        document
-            .querySelector("main")
-            ?.scrollTo({ top: 0, behavior: "smooth" });
+        document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function selectSearchResult(result: SearchRecord): void {
@@ -557,8 +469,7 @@
         const id = parameters.get("register");
         const folder = folderId ? navigationById.get(folderId) : undefined;
         if (folder) void selectFolder(folder, false);
-        else if (id)
-            void selectRegister(id, parameters.get("field") || "", false);
+        else if (id) void selectRegister(id, parameters.get("field") || "", false);
         else if (registerDocument.registers[0]) {
             void selectRegister(registerDocument.registers[0].id, "", false);
         }
@@ -592,8 +503,7 @@
         theme = value;
         const dark =
             value === "dark" ||
-            (value === "system" &&
-                window.matchMedia("(prefers-color-scheme: dark)").matches);
+            (value === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.classList.toggle("dark", dark);
         writePreference("peakrdl-theme", value);
     }
@@ -628,9 +538,7 @@
     function handleSidebarResizeKey(event: KeyboardEvent): void {
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
             event.preventDefault();
-            resizeSidebar(
-                sidebarWidth + (event.key === "ArrowLeft" ? -16 : 16),
-            );
+            resizeSidebar(sidebarWidth + (event.key === "ArrowLeft" ? -16 : 16));
         }
     }
 
@@ -638,10 +546,7 @@
         if (!searchResults.length) return;
         if (event.key === "ArrowDown") {
             event.preventDefault();
-            activeSearchIndex = Math.min(
-                activeSearchIndex + 1,
-                searchResults.length - 1,
-            );
+            activeSearchIndex = Math.min(activeSearchIndex + 1, searchResults.length - 1);
         } else if (event.key === "ArrowUp") {
             event.preventDefault();
             activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
@@ -653,11 +558,7 @@
 
     onMount(() => {
         const savedTheme = readPreference("peakrdl-theme");
-        if (
-            savedTheme === "light" ||
-            savedTheme === "dark" ||
-            savedTheme === "system"
-        ) {
+        if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") {
             theme = savedTheme;
         }
         applyTheme(theme);
@@ -665,17 +566,13 @@
         const savedExpanded = readPreference("peakrdl-expanded");
         if (savedExpanded) {
             try {
-                expanded = new Set([
-                    registerDocument.navigation.id,
-                    ...JSON.parse(savedExpanded),
-                ]);
+                expanded = new Set([registerDocument.navigation.id, ...JSON.parse(savedExpanded)]);
             } catch {
                 removePreference("peakrdl-expanded");
             }
         }
 
-        showReservedGaps =
-            readPreference("peakrdl-show-reserved-gaps") !== "false";
+        showReservedGaps = readPreference("peakrdl-show-reserved-gaps") !== "false";
         const savedValueMode = readPreference("peakrdl-value-mode");
         if (
             savedValueMode === "binary" ||
@@ -688,8 +585,7 @@
 
         applyHash();
         const media = window.matchMedia("(prefers-color-scheme: dark)");
-        const handleSystemTheme = () =>
-            theme === "system" && applyTheme("system");
+        const handleSystemTheme = () => theme === "system" && applyTheme("system");
         window.addEventListener("hashchange", applyHash);
         media.addEventListener("change", handleSystemTheme);
         return () => {
@@ -727,8 +623,7 @@
             onclick={() => selectRegister(node.targetId || "")}
         >
             <span class="min-w-0 flex-1 truncate">{node.label}</span>
-            {#if node.address}<span
-                    class="font-mono text-[0.68rem] text-muted-foreground"
+            {#if node.address}<span class="font-mono text-[0.68rem] text-muted-foreground"
                     >{node.address}</span
                 >{/if}
         </Button>
@@ -770,9 +665,7 @@
 {#snippet navigationPanel()}
     <div class="flex h-full min-h-0 flex-col">
         <div class="px-4 pb-3 pt-5">
-            <h1
-                class="mt-1 line-clamp-2 text-lg font-semibold leading-tight tracking-tight"
-            >
+            <h1 class="mt-1 line-clamp-2 text-lg font-semibold leading-tight tracking-tight">
                 {registerDocument.title}
             </h1>
         </div>
@@ -822,9 +715,7 @@
                         {/snippet}
                     </Sheet.Trigger>
                     <Sheet.Content side="left" class="w-[88vw] p-0 sm:max-w-sm">
-                        <Sheet.Title class="sr-only"
-                            >Register navigation</Sheet.Title
-                        >
+                        <Sheet.Title class="sr-only">Register navigation</Sheet.Title>
                         <Sheet.Description class="sr-only"
                             >Browse the register hierarchy</Sheet.Description
                         >
@@ -845,25 +736,17 @@
                         aria-keyshortcuts="Control+K /"
                         role="combobox"
                         aria-expanded={Boolean(query.trim() && searchFocused)}
-                        aria-controls={query.trim() && searchFocused
-                            ? "search-results"
-                            : undefined}
+                        aria-controls={query.trim() && searchFocused ? "search-results" : undefined}
                         aria-activedescendant={activeSearchIndex >= 0
                             ? `search-result-${activeSearchIndex}`
                             : undefined}
                         autocomplete="off"
                         onfocus={() => (searchFocused = true)}
-                        onblur={() =>
-                            window.setTimeout(
-                                () => (searchFocused = false),
-                                100,
-                            )}
+                        onblur={() => window.setTimeout(() => (searchFocused = false), 100)}
                         oninput={() => (activeSearchIndex = -1)}
                         onkeydown={handleSearchKeydown}
                     />
-                    <Kbd.Root class="absolute right-2 top-1/2 -translate-y-1/2"
-                        >Ctrl K</Kbd.Root
-                    >
+                    <Kbd.Root class="absolute right-2 top-1/2 -translate-y-1/2">Ctrl K</Kbd.Root>
                     {#if query.trim() && searchFocused}
                         <div
                             id="search-results"
@@ -875,29 +758,22 @@
                                     <button
                                         id={`search-result-${index}`}
                                         role="option"
-                                        aria-selected={activeSearchIndex ===
-                                            index}
+                                        aria-selected={activeSearchIndex === index}
                                         class="grid w-full grid-cols-[8rem_minmax(0,1fr)] items-start gap-2 rounded-md px-3 py-2 text-left hover:bg-muted focus-visible:bg-muted focus-visible:outline-none aria-selected:bg-muted"
-                                        onmouseenter={() =>
-                                            (activeSearchIndex = index)}
-                                        onclick={() =>
-                                            selectSearchResult(result)}
+                                        onmouseenter={() => (activeSearchIndex = index)}
+                                        onclick={() => selectSearchResult(result)}
                                     >
                                         <Badge
                                             variant="outline"
                                             class="mt-0.5 justify-self-start capitalize"
-                                            >{result.kind.replace(
-                                                "-",
-                                                " ",
-                                            )}</Badge
+                                            >{result.kind.replace("-", " ")}</Badge
                                         >
                                         <span class="min-w-0 flex-1">
                                             <span
                                                 class="block truncate text-sm font-medium leading-5 text-muted-foreground"
                                             >
-                                                {#each matchedTextParts(result.label, query) as part}
-                                                    <span
-                                                        class:text-primary={part.matched}
+                                                {#each matchedTextParts(result.label, query) as part, partIndex (partIndex)}
+                                                    <span class:text-primary={part.matched}
                                                         >{part.text}</span
                                                     >
                                                 {/each}
@@ -905,9 +781,8 @@
                                             <span
                                                 class="mt-0.5 block truncate font-mono text-xs leading-4 text-muted-foreground"
                                             >
-                                                {#each matchedTextParts(result.context, query) as part}
-                                                    <span
-                                                        class:text-primary={part.matched}
+                                                {#each matchedTextParts(result.context, query) as part, partIndex (partIndex)}
+                                                    <span class:text-primary={part.matched}
                                                         >{part.text}</span
                                                     >
                                                 {/each}
@@ -916,18 +791,14 @@
                                     </button>
                                 {/each}
                             {:else}
-                                <p
-                                    class="px-3 py-7 text-center text-sm text-muted-foreground"
-                                >
+                                <p class="px-3 py-7 text-center text-sm text-muted-foreground">
                                     No matching registers or fields
                                 </p>
                             {/if}
                         </div>
                     {/if}
                     <p class="sr-only" aria-live="polite">
-                        {query.trim()
-                            ? `${searchResults.length} search results`
-                            : ""}
+                        {query.trim() ? `${searchResults.length} search results` : ""}
                     </p>
                 </div>
 
@@ -945,19 +816,12 @@
                             </Button>
                         {/snippet}
                     </DropdownMenu.Trigger>
-                    <DropdownMenu.Content
-                        align="end"
-                        class="w-52 bg-card text-card-foreground"
-                    >
-                        <DropdownMenu.Item
-                            onclick={() => (shortcutsOpen = true)}
-                        >
+                    <DropdownMenu.Content align="end" class="w-52 bg-card text-card-foreground">
+                        <DropdownMenu.Item onclick={() => (shortcutsOpen = true)}>
                             <KeyboardIcon />
                             Keyboard Shortcuts
                         </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                            onclick={() => (settingsOpen = true)}
-                        >
+                        <DropdownMenu.Item onclick={() => (settingsOpen = true)}>
                             <SettingsIcon />
                             Settings
                         </DropdownMenu.Item>
@@ -980,9 +844,7 @@
                         </Dialog.Header>
 
                         <div class="space-y-4 py-2">
-                            <div
-                                class="flex items-center justify-between gap-6"
-                            >
+                            <div class="flex items-center justify-between gap-6">
                                 <div>
                                     <p class="text-sm font-medium">Theme</p>
                                     <p class="text-xs text-muted-foreground">
@@ -992,40 +854,26 @@
                                 <Select.Root
                                     type="single"
                                     value={theme}
-                                    onValueChange={(value) =>
-                                        applyTheme(value as Theme)}
+                                    onValueChange={(value) => applyTheme(value as Theme)}
                                 >
                                     <Select.Trigger class="w-32 bg-background"
                                         >{themeLabel(theme)}</Select.Trigger
                                     >
-                                    <Select.Content
-                                        class="bg-card text-card-foreground"
-                                    >
-                                        <Select.Item value="light"
-                                            >Light</Select.Item
-                                        >
-                                        <Select.Item value="dark"
-                                            >Dark</Select.Item
-                                        >
-                                        <Select.Item value="system"
-                                            >System</Select.Item
-                                        >
+                                    <Select.Content class="bg-card text-card-foreground">
+                                        <Select.Item value="light">Light</Select.Item>
+                                        <Select.Item value="dark">Dark</Select.Item>
+                                        <Select.Item value="system">System</Select.Item>
                                     </Select.Content>
                                 </Select.Root>
                             </div>
 
                             <Separator />
 
-                            <div
-                                class="flex items-center justify-between gap-6"
-                            >
+                            <div class="flex items-center justify-between gap-6">
                                 <div>
-                                    <p class="text-sm font-medium">
-                                        Show reserved gaps
-                                    </p>
+                                    <p class="text-sm font-medium">Show reserved gaps</p>
                                     <p class="text-xs text-muted-foreground">
-                                        Include reserved fields and register
-                                        ranges.
+                                        Include reserved fields and register ranges.
                                     </p>
                                 </div>
                                 <Switch
@@ -1058,9 +906,7 @@
                                 <dt class="text-muted-foreground">
                                     {item.label}
                                 </dt>
-                                <dd
-                                    class="whitespace-pre-wrap break-all font-mono"
-                                >
+                                <dd class="whitespace-pre-wrap break-all font-mono">
                                     {item.value}
                                 </dd>
                             {/each}
@@ -1080,44 +926,38 @@
                         <Dialog.Header>
                             <Dialog.Title>Keyboard Shortcuts</Dialog.Title>
                             <Dialog.Description
-                                >Navigate the register documentation without a
-                                mouse.</Dialog.Description
+                                >Navigate the register documentation without a mouse.</Dialog.Description
                             >
                         </Dialog.Header>
                         <dl
                             class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-5 gap-y-3 py-2 text-sm"
                         >
                             <dt>
-                                <kbd
-                                    class="rounded border bg-muted px-2 py-1 font-mono text-xs"
+                                <kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs"
                                     >Ctrl K</kbd
                                 >
                             </dt>
                             <dd>Focus search</dd>
                             <dt>
-                                <kbd
-                                    class="rounded border bg-muted px-2 py-1 font-mono text-xs"
+                                <kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs"
                                     >/</kbd
                                 >
                             </dt>
                             <dd>Focus search</dd>
                             <dt>
-                                <kbd
-                                    class="rounded border bg-muted px-2 py-1 font-mono text-xs"
+                                <kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs"
                                     >Esc</kbd
                                 >
                             </dt>
                             <dd>Leave search</dd>
                             <dt>
-                                <kbd
-                                    class="rounded border bg-muted px-2 py-1 font-mono text-xs"
+                                <kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs"
                                     >↑ ↓</kbd
                                 >
                             </dt>
                             <dd>Move through search results</dd>
                             <dt>
-                                <kbd
-                                    class="rounded border bg-muted px-2 py-1 font-mono text-xs"
+                                <kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs"
                                     >Enter</kbd
                                 >
                             </dt>
@@ -1128,9 +968,7 @@
             </div>
         </header>
 
-        <main
-            class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6"
-        >
+        <main class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6">
             <div class="mx-auto max-w-6xl">
                 {#if selectedRegister}
                     <section aria-labelledby="register-title">
@@ -1140,9 +978,7 @@
                             >
                                 <FolderTreeIcon class="mr-1 size-3.5" />
                                 {#each selectedBreadcrumbs as group, index (group.id)}
-                                    {#if index}<ChevronRightIcon
-                                            class="size-3"
-                                        />{/if}
+                                    {#if index}<ChevronRightIcon class="size-3" />{/if}
                                     <button
                                         type="button"
                                         class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1156,9 +992,7 @@
 
                         <div>
                             <div class="min-w-0">
-                                <div
-                                    class="mb-2 flex flex-wrap items-center gap-2"
-                                >
+                                <div class="mb-2 flex flex-wrap items-center gap-2">
                                     {#if selectedRegister.absoluteAddressHex}
                                         <button
                                             type="button"
@@ -1170,21 +1004,14 @@
                                                 : "Copy address"}
                                             onclick={() =>
                                                 copyAddress(
-                                                    selectedRegister.absoluteAddressHex ||
-                                                        "",
+                                                    selectedRegister.absoluteAddressHex || "",
                                                 )}
                                         >
-                                            <Badge
-                                                class="cursor-copy font-mono text-sm"
-                                            >
+                                            <Badge class="cursor-copy font-mono text-sm">
                                                 {#if copiedAddress === selectedRegister.absoluteAddressHex}
-                                                    <span class="select-none"
-                                                        >Copied</span
-                                                    >
+                                                    <span class="select-none">Copied</span>
                                                 {:else}
-                                                    <span
-                                                        class="select-none"
-                                                        aria-hidden="true"
+                                                    <span class="select-none" aria-hidden="true"
                                                         >@</span
                                                     ><span
                                                         >{selectedRegister.absoluteAddressHex}</span
@@ -1200,21 +1027,15 @@
                                 >
                                     {selectedRegister.name}
                                 </h2>
-                                <p
-                                    class="mt-2 break-all font-mono text-xs text-muted-foreground"
-                                >
+                                <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
                                     {selectedRegister.identifier}
                                 </p>
                             </div>
                         </div>
 
                         {#if selectedRegister.description}
-                            <div
-                                class="markdown mt-4 max-w-4xl text-sm md:text-base"
-                            >
-                                {@html renderMarkdown(
-                                    selectedRegister.description,
-                                )}
+                            <div class="markdown mt-4 max-w-4xl text-sm md:text-base">
+                                {@html renderMarkdown(selectedRegister.description)}
                             </div>
                         {/if}
 
@@ -1238,19 +1059,14 @@
                 {:else if selectedFolder}
                     {@render folderView(selectedFolder)}
                 {:else}
-                    <div
-                        class="grid min-h-[55vh] place-items-center text-center"
-                    >
+                    <div class="grid min-h-[55vh] place-items-center text-center">
                         <div>
-                            <CpuIcon
-                                class="mx-auto size-10 text-muted-foreground"
-                            />
+                            <CpuIcon class="mx-auto size-10 text-muted-foreground" />
                             <h2 class="mt-4 text-xl font-semibold">
                                 No registers in this document
                             </h2>
                             <p class="mt-2 text-sm text-muted-foreground">
-                                The exported model does not contain register
-                                instances.
+                                The exported model does not contain register instances.
                             </p>
                         </div>
                     </div>
@@ -1262,13 +1078,8 @@
 
 {#snippet folderView(folder: NavigationNode)}
     <section aria-labelledby="folder-title">
-        {#if folder.address}<Badge variant="outline" class="font-mono"
-                >{folder.address}</Badge
-            >{/if}
-        <h2
-            id="folder-title"
-            class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl"
-        >
+        {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
+        <h2 id="folder-title" class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
             {folder.label}
         </h2>
         <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
@@ -1284,8 +1095,7 @@
                         <button
                             class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             onclick={() =>
-                                item.node.kind === "register" &&
-                                item.node.targetId
+                                item.node.kind === "register" && item.node.targetId
                                     ? selectRegister(item.node.targetId)
                                     : selectFolder(item.node)}
                         >
@@ -1295,21 +1105,16 @@
                                 {@render kindIcon(item.node)}
                             </span>
                             <span class="min-w-0 flex-1">
-                                <span class="block truncate font-medium"
-                                    >{item.node.label}</span
-                                >
+                                <span class="block truncate font-medium">{item.node.label}</span>
                                 <span
                                     class="mt-1 block truncate font-mono text-xs text-muted-foreground"
                                 >
                                     {item.node.kind === "register"
-                                        ? item.node.address ||
-                                          item.node.identifier
+                                        ? item.node.address || item.node.identifier
                                         : `${item.node.children.length} items`}
                                 </span>
                             </span>
-                            <ChevronRightIcon
-                                class="size-4 shrink-0 text-muted-foreground"
-                            />
+                            <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground" />
                         </button>
                     {:else}
                         <div
@@ -1346,16 +1151,11 @@
                             title={`${item.field.name} [${bitRange(item.field)}]`}
                             onclick={() =>
                                 document
-                                    .getElementById(
-                                        `field-${encodeURIComponent(item.field.id)}`,
-                                    )
+                                    .getElementById(`field-${encodeURIComponent(item.field.id)}`)
                                     ?.scrollIntoView({ behavior: "smooth" })}
                         >
-                            <span class="block truncate font-medium"
-                                >{item.field.name}</span
-                            >
-                            <span
-                                class="mt-1 block font-mono text-muted-foreground"
+                            <span class="block truncate font-medium">{item.field.name}</span>
+                            <span class="mt-1 block font-mono text-muted-foreground"
                                 >[{bitRange(item.field)}]</span
                             >
                         </button>
@@ -1365,9 +1165,7 @@
                             style={`grid-column: ${register.width - item.high} / ${register.width - item.low + 1}`}
                         >
                             <span class="font-medium">Reserved</span>
-                            <span class="mt-1 font-mono"
-                                >[{bitGapLabel(item.low, item.high)}]</span
-                            >
+                            <span class="mt-1 font-mono">[{bitGapLabel(item.low, item.high)}]</span>
                         </div>
                     {/if}
                 {/each}
@@ -1379,9 +1177,7 @@
 {#snippet valueEditor(register: Register)}
     <Card class="gap-0 overflow-hidden py-0">
         <CardHeader class="border-b bg-muted/25 p-4">
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h3 class="font-semibold">Register calculator</h3>
                 </div>
@@ -1392,9 +1188,7 @@
                     >
                         {#each ["binary", "decimal", "hex", "enum"] as mode (mode)}
                             <Button
-                                variant={valueMode === mode
-                                    ? "secondary"
-                                    : "ghost"}
+                                variant={valueMode === mode ? "secondary" : "ghost"}
                                 size="sm"
                                 class="capitalize"
                                 aria-pressed={valueMode === mode}
@@ -1404,10 +1198,8 @@
                             </Button>
                         {/each}
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => resetValueEditor(register)}>Reset</Button
+                    <Button variant="outline" size="sm" onclick={() => resetValueEditor(register)}
+                        >Reset</Button
                     >
                 </div>
             </div>
@@ -1443,27 +1235,18 @@
                                     >
                                         {item.field.name}
                                     </button>
-                                    <code
-                                        class="shrink-0 text-xs text-muted-foreground"
+                                    <code class="shrink-0 text-xs text-muted-foreground"
                                         >[{bitRange(item.field)}]</code
                                     >
                                 </div>
-                                <p
-                                    class="mt-0.5 truncate font-mono text-xs text-muted-foreground"
-                                >
+                                <p class="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                                     {item.field.identifier}
                                 </p>
                             </div>
                             <div class="grid gap-1">
                                 {#if valueMode === "enum" && item.field.enum}
-                                    {@const value = fieldValue(
-                                        register,
-                                        item.field,
-                                    )}
-                                    {@const member = matchingEnumMember(
-                                        item.field,
-                                        value,
-                                    )}
+                                    {@const value = fieldValue(register, item.field)}
+                                    {@const member = matchingEnumMember(item.field, value)}
                                     <Select.Root
                                         type="single"
                                         value={value.toString()}
@@ -1474,18 +1257,13 @@
                                                 BigInt(selected),
                                             )}
                                     >
-                                        <Select.Trigger
-                                            class="w-full bg-background font-mono"
-                                        >
+                                        <Select.Trigger class="w-full bg-background font-mono">
                                             {member?.displayName ||
                                                 `Unknown (${formatNumericValue(value, item.field.width, "hex")})`}
                                         </Select.Trigger>
-                                        <Select.Content
-                                            class="bg-card text-card-foreground"
-                                        >
+                                        <Select.Content class="bg-card text-card-foreground">
                                             {#each item.field.enum.members as option (option.name)}
-                                                <Select.Item
-                                                    value={option.value}
+                                                <Select.Item value={option.value}
                                                     >{option.displayName}</Select.Item
                                                 >
                                             {/each}
@@ -1493,21 +1271,14 @@
                                     </Select.Root>
                                 {:else}
                                     <Input
-                                        value={fieldEditorValue(
-                                            register,
-                                            item.field,
-                                        )}
+                                        value={fieldEditorValue(register, item.field)}
                                         class="font-mono"
-                                        aria-invalid={Boolean(
-                                            fieldErrors[item.field.id],
-                                        )}
+                                        aria-invalid={Boolean(fieldErrors[item.field.id])}
                                         oninput={(event) =>
                                             updateFieldDraft(
                                                 register,
                                                 item.field,
-                                                (
-                                                    event.currentTarget as HTMLInputElement
-                                                ).value,
+                                                (event.currentTarget as HTMLInputElement).value,
                                             )}
                                     />
                                 {/if}
@@ -1525,13 +1296,9 @@
                 {/each}
             </div>
 
-            <div
-                class="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
-            >
+            <div class="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <label class="grid gap-1.5">
-                    <span class="text-sm font-medium"
-                        >Encoded register value</span
-                    >
+                    <span class="text-sm font-medium">Encoded register value</span>
                     <Input
                         value={encodedDraft}
                         class="font-mono"
@@ -1543,10 +1310,7 @@
                             )}
                     />
                 </label>
-                <Button
-                    variant="outline"
-                    onclick={() => copyEncodedValue(register)}
-                >
+                <Button variant="outline" onclick={() => copyEncodedValue(register)}>
                     {copiedEncodedValue ? "Copied" : "Copy"}
                 </Button>
             </div>
@@ -1572,9 +1336,7 @@
         class="scroll-mt-20 gap-0 overflow-hidden py-0"
     >
         <CardHeader class="border-b bg-muted/25 p-4">
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-            >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
                     <h3 class="text-xl font-semibold tracking-tight">
                         {field.name}
@@ -1587,15 +1349,10 @@
                     <Badge variant="secondary"
                         >{field.width} bit{field.width === 1 ? "" : "s"}</Badge
                     >
-                    <Badge variant="outline"
-                        >SW {accessLabel(field.softwareAccess)}</Badge
-                    >
-                    <Badge variant="outline"
-                        >HW {accessLabel(field.hardwareAccess)}</Badge
-                    >
+                    <Badge variant="outline">SW {accessLabel(field.softwareAccess)}</Badge>
+                    <Badge variant="outline">HW {accessLabel(field.hardwareAccess)}</Badge>
                     {#if field.reset}<Badge variant="outline"
-                            >Reset {field.reset.enumMember ||
-                                field.reset.hex}</Badge
+                            >Reset {field.reset.enumMember || field.reset.hex}</Badge
                         >{/if}
                 </div>
             </div>
@@ -1606,18 +1363,14 @@
                     {@html renderMarkdown(field.description)}
                 </div>
             {:else}
-                <p class="text-sm italic text-muted-foreground">
-                    No field description.
-                </p>
+                <p class="text-sm italic text-muted-foreground">No field description.</p>
             {/if}
 
             {#if field.enum}
                 <div class="mt-4 overflow-hidden rounded-lg border">
                     <div class="border-b bg-muted/40 px-4 py-2.5">
                         <span class="text-sm font-medium">Enum </span>
-                        <code class="text-xs text-primary"
-                            >{field.enum.name}</code
-                        >
+                        <code class="text-xs text-primary">{field.enum.name}</code>
                     </div>
                     <Table>
                         <TableHeader>
@@ -1630,16 +1383,11 @@
                         <TableBody>
                             {#each field.enum.members as member (member.name)}
                                 <TableRow>
-                                    <TableCell class="font-mono"
-                                        >{member.hex}</TableCell
-                                    >
+                                    <TableCell class="font-mono">{member.hex}</TableCell>
                                     <TableCell>
-                                        <span class="block text-sm"
-                                            >{member.displayName}</span
-                                        >
+                                        <span class="block text-sm">{member.displayName}</span>
                                         {#if member.displayName !== member.name}
-                                            <code
-                                                class="text-xs text-muted-foreground"
+                                            <code class="text-xs text-muted-foreground"
                                                 >{member.name}</code
                                             >
                                         {/if}
@@ -1647,14 +1395,10 @@
                                     <TableCell>
                                         {#if member.description}
                                             <div class="markdown text-sm">
-                                                {@html renderMarkdown(
-                                                    member.description,
-                                                )}
+                                                {@html renderMarkdown(member.description)}
                                             </div>
                                         {:else}
-                                            <span class="text-muted-foreground"
-                                                >–</span
-                                            >
+                                            <span class="text-muted-foreground">–</span>
                                         {/if}
                                     </TableCell>
                                 </TableRow>

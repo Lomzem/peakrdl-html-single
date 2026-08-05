@@ -10,11 +10,11 @@ export default defineConfig({
   plugins: [tailwindcss(), svelte({ configFile: false }), viteSingleFile()],
   resolve: {
     alias: {
-      $lib: path.resolve(import.meta.dirname, "src/lib")
-    }
+      $lib: path.resolve(import.meta.dirname, "src/lib"),
+    },
   },
   build: {
     outDir: "../build-shell",
-    emptyOutDir: true
-  }
+    emptyOutDir: true,
+  },
 });

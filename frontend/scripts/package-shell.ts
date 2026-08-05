@@ -4,7 +4,7 @@ import path from "node:path";
 const source = path.resolve(import.meta.dirname, "../build-shell/index.html");
 const destination = path.resolve(
   import.meta.dirname,
-  "../../src/peakrdl_html_single/template.html"
+  "../../src/peakrdl_html_single/template.html",
 );
 const html = await readFile(source, "utf8");
 

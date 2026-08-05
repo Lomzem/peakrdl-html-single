@@ -74,7 +74,7 @@ export interface RegisterDocument {
 const ValueSchema = Schema.Struct({
   value: Schema.String,
   hex: Schema.String,
-  enumMember: Schema.optional(Schema.String)
+  enumMember: Schema.optional(Schema.String),
 });
 
 const EnumMemberSchema = Schema.Struct({
@@ -82,12 +82,12 @@ const EnumMemberSchema = Schema.Struct({
   displayName: Schema.String,
   value: Schema.String,
   hex: Schema.String,
-  description: Schema.String
+  description: Schema.String,
 });
 
 const FieldEnumSchema = Schema.Struct({
   name: Schema.String,
-  members: Schema.Array(EnumMemberSchema)
+  members: Schema.Array(EnumMemberSchema),
 });
 
 const RegisterFieldSchema = Schema.Struct({
@@ -103,7 +103,7 @@ const RegisterFieldSchema = Schema.Struct({
   softwareAccess: Schema.String,
   hardwareAccess: Schema.String,
   reset: Schema.NullOr(ValueSchema),
-  enum: Schema.NullOr(FieldEnumSchema)
+  enum: Schema.NullOr(FieldEnumSchema),
 });
 
 const RegisterSchema = Schema.Struct({
@@ -123,7 +123,7 @@ const RegisterSchema = Schema.Struct({
   arrayDimensions: Schema.Array(Schema.Number),
   arrayStride: Schema.NullOr(Schema.String),
   arrayStrideHex: Schema.NullOr(Schema.String),
-  fields: Schema.Array(RegisterFieldSchema)
+  fields: Schema.Array(RegisterFieldSchema),
 });
 
 const NavigationNodeSchema: Schema.Schema<NavigationNode> = Schema.suspend(() =>
@@ -134,8 +134,8 @@ const NavigationNodeSchema: Schema.Schema<NavigationNode> = Schema.suspend(() =>
     identifier: Schema.String,
     address: Schema.NullOr(Schema.String),
     targetId: Schema.optional(Schema.String),
-    children: Schema.Array(NavigationNodeSchema)
-  })
+    children: Schema.Array(NavigationNodeSchema),
+  }),
 );
 
 export const RegisterDocumentSchema: Schema.Schema<RegisterDocument> = Schema.Struct({
@@ -145,7 +145,7 @@ export const RegisterDocumentSchema: Schema.Schema<RegisterDocument> = Schema.St
   rootPath: Schema.String,
   metadata: Schema.Array(Schema.Struct({ label: Schema.String, value: Schema.String })),
   navigation: NavigationNodeSchema,
-  registers: Schema.Array(RegisterSchema)
+  registers: Schema.Array(RegisterSchema),
 });
 
 function assertDocumentInvariants(registerDocument: RegisterDocument): RegisterDocument {
@@ -193,8 +193,8 @@ export function decodeRegisterDocument(value: unknown): RegisterDocument {
       onLeft: (error) => {
         throw new Error(`Embedded register document is invalid: ${String(error)}`);
       },
-      onRight: assertDocumentInvariants
-    }
+      onRight: assertDocumentInvariants,
+    },
   );
 }
 
@@ -210,9 +210,9 @@ const emptyDocument: RegisterDocument = {
     label: "Register map",
     identifier: "root",
     address: "0x0",
-    children: []
+    children: [],
   },
-  registers: []
+  registers: [],
 };
 
 export function readEmbeddedDocument(): RegisterDocument {

@@ -7,6 +7,9 @@
     "build": "bun run check && bun test && bunx --bun vite build --config vite.shell.config.ts && bun scripts/package-shell.ts",
     "build:kit": "bunx --bun vite build",
     "check": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write .",
+    "lint": "prettier --check . && eslint .",
+    "prepare": "cd .. && husky frontend/.husky",
     "test": "bun test"
   },
   "dependencies": {
@@ -20,6 +23,7 @@
     "tailwind-merge": "latest"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@internationalized/date": "^3.12.0",
     "@lucide/svelte": "^1.28.0",
     "@sveltejs/adapter-static": "latest",
@@ -28,12 +32,21 @@
     "@tailwindcss/vite": "latest",
     "@types/bun": "latest",
     "@types/markdown-it": "latest",
+    "@types/node": "^26.1.2",
     "bits-ui": "^2.16.3",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.22.0",
+    "globals": "^17.9.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.9.6",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "latest",
     "svelte-check": "latest",
     "tailwind-variants": "^3.3.0",
     "tailwindcss": "latest",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.66.0",
     "vite": "latest",
     "vite-plugin-singlefile": "latest"
   }

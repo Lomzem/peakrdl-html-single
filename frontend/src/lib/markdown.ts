@@ -4,7 +4,7 @@ const markdown = new MarkdownIt({
   html: false,
   breaks: true,
   linkify: true,
-  typographer: false
+  typographer: false,
 });
 
 markdown.renderer.rules.image = (tokens, index) =>

@@ -8,15 +8,15 @@ const config = {
     adapter: adapter({
       pages: "build",
       assets: "build",
-      strict: true
+      strict: true,
     }),
     paths: {
-      relative: true
+      relative: true,
     },
     alias: {
-      "$lib": "./src/lib"
-    }
-  }
+      $lib: "./src/lib",
+    },
+  },
 };
 
 export default config;

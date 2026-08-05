@@ -44,7 +44,7 @@ function navigationRecords(node: NavigationNode, records: SearchRecord[]): void 
       field: "",
       enum: "",
       description: "",
-      text: `${node.label} ${node.identifier}`
+      text: `${node.label} ${node.identifier}`,
     });
   }
   for (const child of node.children) navigationRecords(child, records);
@@ -59,7 +59,7 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
     group: register.groupPath.join(" "),
     field: `${field.name} ${field.identifier}`,
     description: field.description,
-    context: `${register.name} · ${register.absoluteAddressHex || "No address"}`
+    context: `${register.name} · ${register.absoluteAddressHex || "No address"}`,
   };
   const records: SearchRecord[] = [
     {
@@ -68,8 +68,8 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
       kind: "field",
       label: field.name,
       enum: field.enum?.name || "",
-      text: `${field.name} ${field.identifier} ${field.description}`
-    }
+      text: `${field.name} ${field.identifier} ${field.description}`,
+    },
   ];
 
   if (field.enum) {
@@ -79,7 +79,7 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
       kind: "enum",
       label: field.enum.name,
       enum: field.enum.name,
-      text: `${field.enum.name} ${field.name}`
+      text: `${field.enum.name} ${field.name}`,
     });
     for (const member of field.enum.members) {
       records.push({
@@ -89,7 +89,7 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
         label: member.name,
         enum: `${field.enum.name} ${member.name}`,
         description: member.description,
-        text: `${member.name} ${member.displayName} ${member.value} ${member.hex} ${member.description}`
+        text: `${member.name} ${member.displayName} ${member.value} ${member.hex} ${member.description}`,
       });
     }
   }
@@ -114,7 +114,7 @@ export function createSearchRecords(document: RegisterDocument): SearchRecord[] 
       field: register.fields.map((field) => `${field.name} ${field.identifier}`).join(" "),
       enum: register.fields.map((field) => field.enum?.name || "").join(" "),
       description: register.description,
-      text: `${register.name} ${register.identifier} ${register.description}`
+      text: `${register.name} ${register.identifier} ${register.description}`,
     });
     for (const field of register.fields) records.push(...fieldRecords(register, field));
   }
@@ -144,7 +144,7 @@ function fuzzyScore(candidate: string, query: string): number | null {
     const gap = index - previous - 1;
     score += gap * 2;
     if (index === previous + 1) score -= 6;
-    if (index === 0 || /[\s._\-/:\[\]()]/.test(haystack[index - 1] || "")) score -= 8;
+    if (index === 0 || /[\s._/:[\]()-]/.test(haystack[index - 1] || "")) score -= 8;
     previous = index;
   }
 
@@ -165,9 +165,9 @@ export class SearchService {
       document: {
         id: "id",
         index: fields,
-        store: false
+        store: false,
       },
-      tokenize: "forward"
+      tokenize: "forward",
     });
     for (const record of records) this.index.add(record);
   }
@@ -200,7 +200,7 @@ export class SearchService {
         [record.group, 8],
         [record.context, 10],
         [record.text, 12],
-        [record.description, 14]
+        [record.description, 14],
       ];
       for (const [candidate, priority] of candidates) {
         if (!candidate) continue;
@@ -208,7 +208,7 @@ export class SearchService {
         if (match !== null) {
           scores.set(
             record.id,
-            Math.min(scores.get(record.id) ?? Number.POSITIVE_INFINITY, match + priority)
+            Math.min(scores.get(record.id) ?? Number.POSITIVE_INFINITY, match + priority),
           );
         }
       }
@@ -220,18 +220,23 @@ export class SearchService {
 
     return [...scores]
       .map(([id, score]) => ({ record: this.records.get(id), score }))
-      .filter((entry): entry is { record: SearchRecord; score: number } => Boolean(entry.record?.targetId))
-      .sort((left, right) => left.score - right.score || left.record.label.localeCompare(right.record.label))
+      .filter((entry): entry is { record: SearchRecord; score: number } =>
+        Boolean(entry.record?.targetId),
+      )
+      .sort(
+        (left, right) =>
+          left.score - right.score || left.record.label.localeCompare(right.record.label),
+      )
       .slice(0, limit)
       .map((entry) => entry.record);
   }
 }
 
 export function makeSearchService(
-  document: RegisterDocument
+  document: RegisterDocument,
 ): Effect.Effect<SearchService, SearchIndexError> {
   return Effect.try({
     try: () => new SearchService(createSearchRecords(document)),
-    catch: (cause) => new SearchIndexError({ cause })
+    catch: (cause) => new SearchIndexError({ cause }),
   });
 }

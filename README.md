@@ -63,13 +63,16 @@ cd frontend
 bun install
 bun run dev
 bun run check
+bun run lint
+bun run format
 bun test
 bun run build
 ```
 
 `bun run build` creates the single-file frontend shell and copies it into the
 Python package. `bun run build:kit` also verifies the regular SvelteKit static
-build.
+build. `bun run lint` checks ESLint and Prettier, while `bun run format` applies
+Prettier formatting. Husky runs the lint checks before each commit.
 
 During `bun run dev`, the Vite server uses `example-rdl/example.rdl` when that
 file exists. Frontend files keep normal HMR behavior. Changes to the example

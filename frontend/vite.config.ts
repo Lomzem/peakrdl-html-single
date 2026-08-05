@@ -20,24 +20,21 @@ function devDocumentPlugin(enabled: boolean): Plugin {
 
     const virtualEnvironment = process.env.PEAKRDL_HTML_SINGLE_PYTHON;
     const localEnvironment = path.join(projectRoot, ".venv", "bin", "python");
-    const python = virtualEnvironment || (existsSync(localEnvironment) ? localEnvironment : "python");
+    const python =
+      virtualEnvironment || (existsSync(localEnvironment) ? localEnvironment : "python");
 
     try {
-      documentJson = execFileSync(
-        python,
-        ["-m", "peakrdl_html_single.dev_document", exampleRdl],
-        {
-          cwd: projectRoot,
-          encoding: "utf8",
-          maxBuffer: 16 * 1024 * 1024,
-          env: {
-            ...process.env,
-            PYTHONPATH: [path.join(projectRoot, "src"), process.env.PYTHONPATH]
-              .filter(Boolean)
-              .join(path.delimiter)
-          }
-        }
-      );
+      documentJson = execFileSync(python, ["-m", "peakrdl_html_single.dev_document", exampleRdl], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024,
+        env: {
+          ...process.env,
+          PYTHONPATH: [path.join(projectRoot, "src"), process.env.PYTHONPATH]
+            .filter(Boolean)
+            .join(path.delimiter),
+        },
+      });
       console.info("[html-single] Using example-rdl/example.rdl for development data");
     } catch (error) {
       console.warn("[html-single] Could not compile development RDL; using an empty model", error);
@@ -65,12 +62,12 @@ function devDocumentPlugin(enabled: boolean): Plugin {
       server.watcher.on("add", update);
       server.watcher.on("change", update);
       server.watcher.on("unlink", update);
-    }
+    },
   };
 }
 
 export default defineConfig(({ command }) => {
   return {
-    plugins: [devDocumentPlugin(command === "serve"), tailwindcss(), sveltekit()]
+    plugins: [devDocumentPlugin(command === "serve"), tailwindcss(), sveltekit()],
   };
 });
