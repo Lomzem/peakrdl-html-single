@@ -36,7 +36,7 @@
   import { makeSearchService, type SearchRecord } from "$lib/search";
 
   type Theme = "light" | "dark" | "system";
-  type ValueMode = "hex" | "decimal" | "enum";
+  type ValueMode = "binary" | "hex" | "decimal" | "enum";
   type BitLayoutItem =
     | { kind: "field"; field: RegisterField }
     | { kind: "gap"; low: number; high: number };
@@ -123,12 +123,14 @@
     return (registerValue(register) >> BigInt(field.low)) & valueMask(field.width);
   }
 
-  function numericMode(mode: ValueMode): "hex" | "decimal" {
-    return mode === "decimal" ? "decimal" : "hex";
+  function numericMode(mode: ValueMode): "binary" | "hex" | "decimal" {
+    if (mode === "binary" || mode === "decimal") return mode;
+    return "hex";
   }
 
-  function formatNumericValue(value: bigint, width: number, mode: "hex" | "decimal"): string {
+  function formatNumericValue(value: bigint, width: number, mode: "binary" | "hex" | "decimal"): string {
     if (mode === "decimal") return value.toString(10);
+    if (mode === "binary") return `0b${value.toString(2).padStart(Math.max(1, width), "0")}`;
     return `0x${value.toString(16).padStart(Math.max(1, Math.ceil(width / 4)), "0")}`;
   }
 
@@ -136,11 +138,22 @@
     return formatNumericValue(value, register.width, numericMode(mode));
   }
 
-  function parseNumericValue(input: string, mode: "hex" | "decimal", width: number): bigint {
+  function parseNumericValue(input: string, mode: "binary" | "hex" | "decimal", width: number): bigint {
     const value = input.trim().replaceAll("_", "");
-    const valid = mode === "decimal" ? /^\d+$/.test(value) : /^(?:0x)?[\da-f]+$/i.test(value);
-    if (!valid) throw new Error(mode === "decimal" ? "Enter a decimal value." : "Enter a hexadecimal value.");
-    const parsed = BigInt(mode === "hex" && !value.toLowerCase().startsWith("0x") ? `0x${value}` : value);
+    const valid = mode === "decimal"
+      ? /^\d+$/.test(value)
+      : mode === "binary"
+        ? /^(?:0b)?[01]+$/i.test(value)
+        : /^(?:0x)?[\da-f]+$/i.test(value);
+    if (!valid) {
+      throw new Error(
+        mode === "decimal" ? "Enter a decimal value." :
+          mode === "binary" ? "Enter a binary value." : "Enter a hexadecimal value."
+      );
+    }
+    const needsPrefix = (mode === "hex" && !value.toLowerCase().startsWith("0x")) ||
+      (mode === "binary" && !value.toLowerCase().startsWith("0b"));
+    const parsed = BigInt(needsPrefix ? `${mode === "binary" ? "0b" : "0x"}${value}` : value);
     if (parsed > valueMask(width)) throw new Error(`Value exceeds ${width} bits.`);
     return parsed;
   }
@@ -480,7 +493,7 @@
 
     showReservedGaps = readPreference("peakrdl-show-reserved-gaps") !== "false";
     const savedValueMode = readPreference("peakrdl-value-mode");
-    if (savedValueMode === "hex" || savedValueMode === "decimal" || savedValueMode === "enum") {
+    if (savedValueMode === "binary" || savedValueMode === "hex" || savedValueMode === "decimal" || savedValueMode === "enum") {
       valueMode = savedValueMode;
     }
 
@@ -878,12 +891,11 @@
     <CardHeader class="border-b bg-muted/25 p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 class="font-semibold">Value editor</h3>
-          <p class="text-xs text-muted-foreground">Decode or compose a register value.</p>
+          <h3 class="font-semibold">Register calculator</h3>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="flex rounded-lg border bg-background p-0.5" aria-label="Value display mode">
-            {#each ["hex", "decimal", "enum"] as mode (mode)}
+            {#each ["binary", "decimal", "hex", "enum"] as mode (mode)}
               <Button
                 variant={valueMode === mode ? "secondary" : "ghost"}
                 size="sm"
@@ -927,18 +939,20 @@
               <code>[{bitGapLabel(item.low, item.high)}]</code>
             </div>
           {:else}
-            <div class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_5rem_minmax(10rem,16rem)] sm:items-center">
+            <div class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-center">
               <div class="min-w-0">
-                <button
-                  type="button"
-                  class="block max-w-full truncate text-left text-sm font-medium hover:underline"
-                  onclick={() => document.getElementById(`field-${encodeURIComponent(item.field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
-                >
-                  {item.field.name}
-                </button>
+                <div class="flex min-w-0 items-center gap-2">
+                  <button
+                    type="button"
+                    class="min-w-0 truncate text-left text-sm font-medium hover:underline"
+                    onclick={() => document.getElementById(`field-${encodeURIComponent(item.field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    {item.field.name}
+                  </button>
+                  <code class="shrink-0 text-xs text-muted-foreground">[{bitRange(item.field)}]</code>
+                </div>
                 <p class="mt-0.5 truncate font-mono text-xs text-muted-foreground">{item.field.identifier}</p>
               </div>
-              <code class="text-xs text-muted-foreground">[{bitRange(item.field)}]</code>
               <div>
                 {#if valueMode === "enum" && item.field.enum}
                   {@const value = fieldValue(register, item.field)}
