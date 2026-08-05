@@ -36,6 +36,7 @@
   import { makeSearchService, type SearchRecord } from "$lib/search";
 
   type Theme = "light" | "dark" | "system";
+  type ValueMode = "hex" | "decimal" | "enum";
   type BitLayoutItem =
     | { kind: "field"; field: RegisterField }
     | { kind: "gap"; low: number; high: number };
@@ -46,6 +47,9 @@
   const registerDocument = readEmbeddedDocument();
   const searchService = Effect.runSync(makeSearchService(registerDocument));
   const registersById = new Map(registerDocument.registers.map((register) => [register.id, register]));
+  const resetValuesById = new Map(
+    registerDocument.registers.map((register) => [register.id, resetRegisterValue(register)])
+  );
   const navigationById = new Map<string, NavigationNode>();
   const ancestorIds = new Map<string, string[]>();
 
@@ -66,6 +70,17 @@
   let sidebarWidth = $state(304);
   let copiedAddress = $state("");
   let showReservedGaps = $state(true);
+  let valueMode = $state<ValueMode>("hex");
+  let registerValues = $state(new Map(resetValuesById));
+  let encodedDraft = $state(
+    registerDocument.registers[0]
+      ? formatRegisterValue(registerDocument.registers[0], resetValuesById.get(registerDocument.registers[0].id) || 0n, "hex")
+      : ""
+  );
+  let encodedError = $state("");
+  let fieldDrafts = $state<Record<string, string>>({});
+  let fieldErrors = $state<Record<string, string>>({});
+  let copiedEncodedValue = $state(false);
   let selectedRegister = $derived(registersById.get(selectedId));
   let selectedFolder = $derived(navigationById.get(selectedFolderId));
   let selectedBreadcrumbs = $derived(
@@ -85,6 +100,144 @@
 
   function fieldsMsbFirst(fields: ReadonlyArray<RegisterField>): RegisterField[] {
     return [...fields].sort((left, right) => right.high - left.high || right.low - left.low);
+  }
+
+  function valueMask(width: number): bigint {
+    return width > 0 ? (1n << BigInt(width)) - 1n : 0n;
+  }
+
+  function resetRegisterValue(register: Register): bigint {
+    let value = 0n;
+    for (const field of register.fields) {
+      if (!field.reset) continue;
+      value |= (BigInt(field.reset.value) & valueMask(field.width)) << BigInt(field.low);
+    }
+    return value & valueMask(register.width);
+  }
+
+  function registerValue(register: Register): bigint {
+    return registerValues.get(register.id) ?? resetValuesById.get(register.id) ?? 0n;
+  }
+
+  function fieldValue(register: Register, field: RegisterField): bigint {
+    return (registerValue(register) >> BigInt(field.low)) & valueMask(field.width);
+  }
+
+  function numericMode(mode: ValueMode): "hex" | "decimal" {
+    return mode === "decimal" ? "decimal" : "hex";
+  }
+
+  function formatNumericValue(value: bigint, width: number, mode: "hex" | "decimal"): string {
+    if (mode === "decimal") return value.toString(10);
+    return `0x${value.toString(16).padStart(Math.max(1, Math.ceil(width / 4)), "0")}`;
+  }
+
+  function formatRegisterValue(register: Register, value: bigint, mode: ValueMode): string {
+    return formatNumericValue(value, register.width, numericMode(mode));
+  }
+
+  function parseNumericValue(input: string, mode: "hex" | "decimal", width: number): bigint {
+    const value = input.trim().replaceAll("_", "");
+    const valid = mode === "decimal" ? /^\d+$/.test(value) : /^(?:0x)?[\da-f]+$/i.test(value);
+    if (!valid) throw new Error(mode === "decimal" ? "Enter a decimal value." : "Enter a hexadecimal value.");
+    const parsed = BigInt(mode === "hex" && !value.toLowerCase().startsWith("0x") ? `0x${value}` : value);
+    if (parsed > valueMask(width)) throw new Error(`Value exceeds ${width} bits.`);
+    return parsed;
+  }
+
+  function matchingEnumMember(field: RegisterField, value: bigint) {
+    return field.enum?.members.find((member) => BigInt(member.value) === value);
+  }
+
+  function fieldEditorValue(register: Register, field: RegisterField): string {
+    return fieldDrafts[field.id] ??
+      formatNumericValue(fieldValue(register, field), field.width, numericMode(valueMode));
+  }
+
+  function fieldResetLabel(field: RegisterField): string {
+    if (!field.reset) return "No reset";
+    const value = BigInt(field.reset.value);
+    if (valueMode === "enum") {
+      const member = matchingEnumMember(field, value);
+      if (member) return `Reset: ${member.displayName}`;
+    }
+    return `Reset: ${formatNumericValue(value, field.width, numericMode(valueMode))}`;
+  }
+
+  function setRegisterValue(register: Register, value: bigint): void {
+    const next = new Map(registerValues);
+    next.set(register.id, value & valueMask(register.width));
+    registerValues = next;
+  }
+
+  function syncValueEditor(register: Register): void {
+    encodedDraft = formatRegisterValue(register, registerValue(register), valueMode);
+    encodedError = "";
+    fieldDrafts = {};
+    fieldErrors = {};
+  }
+
+  function setValueMode(mode: ValueMode): void {
+    valueMode = mode;
+    writePreference("peakrdl-value-mode", mode);
+    if (selectedRegister) syncValueEditor(selectedRegister);
+  }
+
+  function updateEncodedValue(register: Register, input: string): void {
+    encodedDraft = input;
+    try {
+      const value = parseNumericValue(input, numericMode(valueMode), register.width);
+      setRegisterValue(register, value);
+      encodedError = "";
+      fieldDrafts = {};
+      fieldErrors = {};
+    } catch (error) {
+      encodedError = error instanceof Error ? error.message : "Invalid value.";
+    }
+  }
+
+  function updateFieldValue(register: Register, field: RegisterField, value: bigint): void {
+    const shiftedMask = valueMask(field.width) << BigInt(field.low);
+    const encoded = (registerValue(register) & ~shiftedMask) |
+      ((value & valueMask(field.width)) << BigInt(field.low));
+    setRegisterValue(register, encoded);
+    encodedDraft = formatRegisterValue(register, encoded, valueMode);
+  }
+
+  function updateFieldDraft(register: Register, field: RegisterField, input: string): void {
+    fieldDrafts = { ...fieldDrafts, [field.id]: input };
+    try {
+      const value = parseNumericValue(input, numericMode(valueMode), field.width);
+      updateFieldValue(register, field, value);
+      const { [field.id]: _, ...remaining } = fieldErrors;
+      fieldErrors = remaining;
+    } catch (error) {
+      fieldErrors = {
+        ...fieldErrors,
+        [field.id]: error instanceof Error ? error.message : "Invalid value."
+      };
+    }
+  }
+
+  function resetValueEditor(register: Register): void {
+    setRegisterValue(register, resetValuesById.get(register.id) || 0n);
+    syncValueEditor(register);
+  }
+
+  async function copyEncodedValue(register: Register): Promise<void> {
+    const value = formatRegisterValue(register, registerValue(register), valueMode);
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = value;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    copiedEncodedValue = true;
+    window.setTimeout(() => (copiedEncodedValue = false), 700);
   }
 
   function bitLayoutItems(register: Register): BitLayoutItem[] {
@@ -177,9 +330,11 @@
   }
 
   async function selectRegister(id: string, fieldId = "", writeHash = true): Promise<void> {
-    if (!registersById.has(id)) return;
+    const register = registersById.get(id);
+    if (!register) return;
     selectedId = id;
     selectedFolderId = "";
+    syncValueEditor(register);
     expandToRegister(id);
     mobileNavigationOpen = false;
     query = "";
@@ -324,6 +479,10 @@
     }
 
     showReservedGaps = readPreference("peakrdl-show-reserved-gaps") !== "false";
+    const savedValueMode = readPreference("peakrdl-value-mode");
+    if (savedValueMode === "hex" || savedValueMode === "decimal" || savedValueMode === "enum") {
+      valueMode = savedValueMode;
+    }
 
     applyHash();
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -417,18 +576,13 @@
 >
   <aside class="print-hidden sticky top-0 hidden h-screen border-r bg-card/70 backdrop-blur md:block">
     {@render navigationPanel()}
-    <div
-      role="separator"
-      tabindex="0"
+    <button
+      type="button"
       aria-label="Resize sidebar"
-      aria-orientation="vertical"
-      aria-valuemin="240"
-      aria-valuemax="520"
-      aria-valuenow={sidebarWidth}
       class="absolute inset-y-0 -right-1 z-40 w-2 cursor-col-resize touch-none bg-transparent outline-none transition-colors hover:bg-primary/20 focus-visible:bg-primary/30"
       onpointerdown={startSidebarResize}
       onkeydown={handleSidebarResizeKey}
-    ></div>
+    ></button>
   </aside>
 
   <div class="min-w-0">
@@ -608,6 +762,10 @@
             <Separator class="my-5" />
             {@render registerLayout(selectedRegister)}
 
+            <div class="mt-5">
+              {@render valueEditor(selectedRegister)}
+            </div>
+
             <div class="mt-5 space-y-4">
               {#each bitLayoutItems(selectedRegister) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
                 {#if item.kind === "field"}
@@ -713,6 +871,111 @@
       </div>
     </div>
   </section>
+{/snippet}
+
+{#snippet valueEditor(register: Register)}
+  <Card class="gap-0 overflow-hidden py-0">
+    <CardHeader class="border-b bg-muted/25 p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="font-semibold">Value editor</h3>
+          <p class="text-xs text-muted-foreground">Decode or compose a register value.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex rounded-lg border bg-background p-0.5" aria-label="Value display mode">
+            {#each ["hex", "decimal", "enum"] as mode (mode)}
+              <Button
+                variant={valueMode === mode ? "secondary" : "ghost"}
+                size="sm"
+                class="capitalize"
+                aria-pressed={valueMode === mode}
+                onclick={() => setValueMode(mode as ValueMode)}
+              >
+                {mode}
+              </Button>
+            {/each}
+          </div>
+          <Button variant="outline" size="sm" onclick={() => resetValueEditor(register)}>Reset</Button>
+        </div>
+      </div>
+    </CardHeader>
+
+    <CardContent class="p-4">
+      <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <label class="grid gap-1.5">
+          <span class="text-sm font-medium">Encoded register value</span>
+          <Input
+            value={encodedDraft}
+            class="font-mono"
+            aria-invalid={Boolean(encodedError)}
+            oninput={(event) => updateEncodedValue(register, (event.currentTarget as HTMLInputElement).value)}
+          />
+        </label>
+        <Button variant="outline" onclick={() => copyEncodedValue(register)}>
+          {copiedEncodedValue ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      {#if encodedError}
+        <p class="mt-1.5 text-xs text-destructive">{encodedError}</p>
+      {/if}
+
+      <div class="mt-4 overflow-hidden rounded-lg border">
+        {#each bitLayoutItems(register) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
+          {#if item.kind === "gap"}
+            <div class="flex items-center justify-between border-b border-dashed bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground last:border-b-0">
+              <span>Reserved</span>
+              <code>[{bitGapLabel(item.low, item.high)}]</code>
+            </div>
+          {:else}
+            <div class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_5rem_minmax(10rem,16rem)] sm:items-center">
+              <div class="min-w-0">
+                <button
+                  type="button"
+                  class="block max-w-full truncate text-left text-sm font-medium hover:underline"
+                  onclick={() => document.getElementById(`field-${encodeURIComponent(item.field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  {item.field.name}
+                </button>
+                <p class="mt-0.5 truncate font-mono text-xs text-muted-foreground">{item.field.identifier}</p>
+              </div>
+              <code class="text-xs text-muted-foreground">[{bitRange(item.field)}]</code>
+              <div>
+                {#if valueMode === "enum" && item.field.enum}
+                  {@const value = fieldValue(register, item.field)}
+                  {@const member = matchingEnumMember(item.field, value)}
+                  <Select.Root
+                    type="single"
+                    value={value.toString()}
+                    onValueChange={(selected) => updateFieldValue(register, item.field, BigInt(selected))}
+                  >
+                    <Select.Trigger class="w-full bg-background">
+                      {member?.displayName || `Unknown (${formatNumericValue(value, item.field.width, "hex")})`}
+                    </Select.Trigger>
+                    <Select.Content class="bg-card text-card-foreground">
+                      {#each item.field.enum.members as option (option.name)}
+                        <Select.Item value={option.value}>{option.displayName}</Select.Item>
+                      {/each}
+                    </Select.Content>
+                  </Select.Root>
+                {:else}
+                  <Input
+                    value={fieldEditorValue(register, item.field)}
+                    class="font-mono"
+                    aria-invalid={Boolean(fieldErrors[item.field.id])}
+                    oninput={(event) => updateFieldDraft(register, item.field, (event.currentTarget as HTMLInputElement).value)}
+                  />
+                {/if}
+                <p class="mt-1 text-xs text-muted-foreground">{fieldResetLabel(item.field)}</p>
+                {#if fieldErrors[item.field.id]}
+                  <p class="mt-1 text-xs text-destructive">{fieldErrors[item.field.id]}</p>
+                {/if}
+              </div>
+            </div>
+          {/if}
+        {/each}
+      </div>
+    </CardContent>
+  </Card>
 {/snippet}
 
 {#snippet reservedField(low: number, high: number)}
