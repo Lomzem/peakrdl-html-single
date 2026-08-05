@@ -52,6 +52,7 @@
   let mobileNavigationOpen = $state(false);
   let theme = $state<Theme>("system");
   let activeSearchIndex = $state(-1);
+  let sidebarWidth = $state(304);
   let selectedRegister = $derived(registersById.get(selectedId));
   let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
 
@@ -147,6 +148,30 @@
 
   function cycleTheme(): void {
     applyTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system");
+  }
+
+  function resizeSidebar(width: number): void {
+    sidebarWidth = Math.min(520, Math.max(240, width));
+  }
+
+  function startSidebarResize(event: PointerEvent): void {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+    const move = (moveEvent: PointerEvent) => resizeSidebar(startWidth + moveEvent.clientX - startX);
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+  }
+
+  function handleSidebarResizeKey(event: KeyboardEvent): void {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      resizeSidebar(sidebarWidth + (event.key === "ArrowLeft" ? -16 : 16));
+    }
   }
 
   function handleSearchKeydown(event: KeyboardEvent): void {
@@ -262,9 +287,24 @@
   </div>
 {/snippet}
 
-<div class="min-h-screen bg-background md:grid md:grid-cols-[19rem_minmax(0,1fr)]">
+<div
+  class="min-h-screen bg-background md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]"
+  style={`--sidebar-width: ${sidebarWidth}px`}
+>
   <aside class="print-hidden sticky top-0 hidden h-screen border-r bg-card/70 backdrop-blur md:block">
     {@render navigationPanel()}
+    <button
+      type="button"
+      role="separator"
+      aria-label="Resize sidebar"
+      aria-orientation="vertical"
+      aria-valuemin="240"
+      aria-valuemax="520"
+      aria-valuenow={sidebarWidth}
+      class="absolute inset-y-0 -right-1 z-40 w-2 cursor-col-resize touch-none bg-transparent outline-none transition-colors hover:bg-primary/20 focus-visible:bg-primary/30"
+      onpointerdown={startSidebarResize}
+      onkeydown={handleSidebarResizeKey}
+    ></button>
   </aside>
 
   <div class="min-w-0">
@@ -445,8 +485,8 @@
 {/snippet}
 
 {#snippet fieldCard(field: RegisterField)}
-  <Card id={`field-${encodeURIComponent(field.id)}`} class="scroll-mt-20 overflow-hidden">
-    <CardHeader class="border-b bg-muted/25">
+  <Card id={`field-${encodeURIComponent(field.id)}`} class="scroll-mt-20 gap-0 overflow-hidden py-0">
+    <CardHeader class="border-b bg-muted/25 p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
           <p class="font-mono text-xs text-primary">[{bitRange(field)}] · {field.identifier}</p>
@@ -460,7 +500,7 @@
         </div>
       </div>
     </CardHeader>
-    <CardContent class="pt-5">
+    <CardContent class="p-4">
       {#if field.description}
         <div class="markdown text-sm">{@html renderMarkdown(field.description)}</div>
       {:else}
@@ -468,7 +508,7 @@
       {/if}
 
       {#if field.enum}
-        <div class="mt-6 overflow-hidden rounded-lg border">
+        <div class="mt-4 overflow-hidden rounded-lg border">
           <div class="border-b bg-muted/40 px-4 py-2.5">
             <span class="text-sm font-medium">Enum </span>
             <code class="text-xs text-primary">{field.enum.name}</code>
