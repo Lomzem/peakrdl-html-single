@@ -59,6 +59,11 @@
   let copiedAddress = $state("");
   let selectedRegister = $derived(registersById.get(selectedId));
   let selectedFolder = $derived(navigationById.get(selectedFolderId));
+  let selectedBreadcrumbs = $derived(
+    (ancestorIds.get(selectedId) || [])
+      .map((id) => navigationById.get(id))
+      .filter((node): node is NavigationNode => node?.kind === "doc-group")
+  );
   let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
 
   function accessLabel(value: string): string {
@@ -430,12 +435,18 @@
       <div class="mx-auto max-w-6xl">
         {#if selectedRegister}
           <section aria-labelledby="register-title">
-            {#if selectedRegister.groupPath.length}
+            {#if selectedBreadcrumbs.length}
               <div class="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <FolderTreeIcon class="mr-1 size-3.5" />
-                {#each selectedRegister.groupPath as group, index}
+                {#each selectedBreadcrumbs as group, index (group.id)}
                   {#if index}<ChevronRightIcon class="size-3" />{/if}
-                  <span>{group}</span>
+                  <button
+                    type="button"
+                    class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onclick={() => selectFolder(group)}
+                  >
+                    {group.label}
+                  </button>
                 {/each}
               </div>
             {/if}
@@ -551,7 +562,7 @@
       >
         {#each register.fields as field, index (field.id)}
           <button
-            class={`row-start-1 min-h-16 overflow-hidden border-y-2 px-1 text-center text-[0.65rem] leading-tight transition hover:brightness-95 ${index % 2 ? "border-primary/35 bg-accent" : "border-primary/60 bg-secondary"}`}
+            class={`row-start-1 min-h-16 overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
             style={`grid-column: ${register.width - field.high} / ${register.width - field.low + 1}`}
             title={`${field.name} [${bitRange(field)}]`}
             onclick={() => document.getElementById(`field-${encodeURIComponent(field.id)}`)?.scrollIntoView({ behavior: "smooth" })}
