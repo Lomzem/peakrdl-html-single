@@ -38,8 +38,11 @@ exporter through PeakRDL:
 ```sh
 uv venv
 source .venv/bin/activate
-uv pip install "git+https://github.com/Lomzem/peakrdl-html-single.git"
-peakrdl html-single input.rdl -o registers.html
+```
+
+```sh
+uv pip install peakrdl "git+https://github.com/Lomzem/peakrdl-html-single.git"
+uv run peakrdl html-single input.rdl -o registers.html
 ```
 
 The exporter does not require `doc_group`. A source that uses it must declare
