@@ -15,14 +15,21 @@
 
     interface Props {
         folder: NavigationNode;
+        breadcrumbs: ReadonlyArray<NavigationNode>;
         registersById: ReadonlyMap<string, Register>;
         showReservedGaps: boolean;
         onSelectRegister: (id: string) => void;
         onSelectFolder: (node: NavigationNode) => void;
     }
 
-    let { folder, registersById, showReservedGaps, onSelectRegister, onSelectFolder }: Props =
-        $props();
+    let {
+        folder,
+        breadcrumbs,
+        registersById,
+        showReservedGaps,
+        onSelectRegister,
+        onSelectFolder,
+    }: Props = $props();
     let items = $derived(folderListItems(folder));
 
     function hex(value: bigint): string {
@@ -77,6 +84,22 @@
 {/snippet}
 
 <section aria-labelledby="folder-title">
+    {#if breadcrumbs.length}
+        <div class="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+            <FolderTreeIcon class="mr-1 size-3.5" />
+            {#each breadcrumbs as ancestor, index (ancestor.id)}
+                {#if index}<ChevronRightIcon class="size-3" />{/if}
+                <button
+                    type="button"
+                    class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onclick={() => onSelectFolder(ancestor)}
+                >
+                    {ancestor.label}
+                </button>
+            {/each}
+        </div>
+    {/if}
+
     {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
     <h2 id="folder-title" class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         {folder.label}

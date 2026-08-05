@@ -27,9 +27,11 @@
     );
     const navigationById = new Map<string, NavigationNode>();
     const ancestorIds = new Map<string, string[]>();
+    const navigationAncestorIds = new Map<string, string[]>();
 
     function recordAncestors(node: NavigationNode, ancestors: string[]): void {
         navigationById.set(node.id, node);
+        navigationAncestorIds.set(node.id, ancestors);
         if (node.targetId) ancestorIds.set(node.targetId, ancestors);
         for (const child of node.children) recordAncestors(child, [...ancestors, node.id]);
     }
@@ -48,6 +50,11 @@
         (ancestorIds.get(selectedId) || [])
             .map((id) => navigationById.get(id))
             .filter((node): node is NavigationNode => node?.kind === "doc-group"),
+    );
+    let selectedFolderBreadcrumbs = $derived(
+        (navigationAncestorIds.get(selectedFolderId) || [])
+            .map((id) => navigationById.get(id))
+            .filter((node): node is NavigationNode => node !== undefined),
     );
 
     function toggleNode(id: string): void {
@@ -248,6 +255,7 @@
                 {:else if selectedFolder}
                     <FolderView
                         folder={selectedFolder}
+                        breadcrumbs={selectedFolderBreadcrumbs}
                         {registersById}
                         {showReservedGaps}
                         onSelectRegister={(id) => void selectRegister(id)}
