@@ -12,10 +12,11 @@
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "latest",
     "@fontsource-variable/rubik": "latest",
+    "@tanstack/svelte-hotkeys": "^0.10.0",
+    "clsx": "latest",
     "effect": "latest",
     "flexsearch": "latest",
     "markdown-it": "latest",
-    "clsx": "latest",
     "tailwind-merge": "latest"
   },
   "devDependencies": {

@@ -3,12 +3,16 @@
 
   import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
   import CpuIcon from "@lucide/svelte/icons/cpu";
+  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical";
   import FileStackIcon from "@lucide/svelte/icons/files";
   import FolderTreeIcon from "@lucide/svelte/icons/folder-tree";
   import HashIcon from "@lucide/svelte/icons/hash";
+  import InfoIcon from "@lucide/svelte/icons/info";
+  import KeyboardIcon from "@lucide/svelte/icons/keyboard";
   import MenuIcon from "@lucide/svelte/icons/menu";
   import SearchIcon from "@lucide/svelte/icons/search";
   import SettingsIcon from "@lucide/svelte/icons/settings";
+  import { createHotkey } from "@tanstack/svelte-hotkeys";
   import { Effect } from "effect";
   import { onMount, tick } from "svelte";
 
@@ -16,6 +20,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
   import * as Dialog from "$lib/components/ui/dialog";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Input } from "$lib/components/ui/input";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import * as Select from "$lib/components/ui/select";
@@ -70,17 +75,22 @@
   let sidebarWidth = $state(304);
   let copiedAddress = $state("");
   let showReservedGaps = $state(true);
-  let valueMode = $state<ValueMode>("hex");
+  let valueMode = $state<ValueMode>("enum");
   let registerValues = $state(new Map(resetValuesById));
   let encodedDraft = $state(
     registerDocument.registers[0]
-      ? formatRegisterValue(registerDocument.registers[0], resetValuesById.get(registerDocument.registers[0].id) || 0n, "hex")
+      ? formatRegisterValue(registerDocument.registers[0], resetValuesById.get(registerDocument.registers[0].id) || 0n, "enum")
       : ""
   );
   let encodedError = $state("");
   let fieldDrafts = $state<Record<string, string>>({});
   let fieldErrors = $state<Record<string, string>>({});
   let copiedEncodedValue = $state(false);
+  let searchInput = $state<HTMLInputElement | null>(null);
+  let searchFocused = $state(false);
+  let settingsOpen = $state(false);
+  let aboutOpen = $state(false);
+  let shortcutsOpen = $state(false);
   let selectedRegister = $derived(registersById.get(selectedId));
   let selectedFolder = $derived(navigationById.get(selectedFolderId));
   let selectedBreadcrumbs = $derived(
@@ -89,6 +99,22 @@
       .filter((node): node is NavigationNode => node?.kind === "doc-group")
   );
   let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
+
+  function focusSearch(): void {
+    searchInput?.focus();
+    searchInput?.select();
+  }
+
+  createHotkey("Control+K", focusSearch);
+  createHotkey("/", focusSearch);
+  createHotkey(
+    "Escape",
+    () => {
+      searchInput?.blur();
+      searchFocused = false;
+    },
+    () => ({ enabled: searchFocused })
+  );
 
   function accessLabel(value: string): string {
     return value ? value.toUpperCase() : "–";
@@ -457,11 +483,6 @@
   }
 
   function handleSearchKeydown(event: KeyboardEvent): void {
-    if (event.key === "Escape") {
-      query = "";
-      activeSearchIndex = -1;
-      return;
-    }
     if (!searchResults.length) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
@@ -619,19 +640,23 @@
         <div class="relative min-w-0 flex-1">
           <SearchIcon class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            bind:ref={searchInput}
             bind:value={query}
             class="h-9 bg-card pl-9 font-mono text-sm"
             placeholder="Search address, register, field, or enum…"
             aria-label="Search registers"
+            aria-keyshortcuts="Control+K /"
             role="combobox"
-            aria-expanded={Boolean(query.trim())}
-            aria-controls={query.trim() ? "search-results" : undefined}
+            aria-expanded={Boolean(query.trim() && searchFocused)}
+            aria-controls={query.trim() && searchFocused ? "search-results" : undefined}
             aria-activedescendant={activeSearchIndex >= 0 ? `search-result-${activeSearchIndex}` : undefined}
             autocomplete="off"
+            onfocus={() => (searchFocused = true)}
+            onblur={() => window.setTimeout(() => (searchFocused = false), 100)}
             oninput={() => (activeSearchIndex = -1)}
             onkeydown={handleSearchKeydown}
           />
-          {#if query.trim()}
+          {#if query.trim() && searchFocused}
             <div
               id="search-results"
               role="listbox"
@@ -664,14 +689,31 @@
           </p>
         </div>
 
-        <Dialog.Root>
-          <Dialog.Trigger>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
             {#snippet child({ props })}
-              <Button {...props} variant="outline" size="icon" aria-label="Open settings">
-                <SettingsIcon />
+              <Button {...props} variant="outline" size="icon" aria-label="Open menu">
+                <EllipsisVerticalIcon />
               </Button>
             {/snippet}
-          </Dialog.Trigger>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="end" class="w-52 bg-card text-card-foreground">
+            <DropdownMenu.Item onclick={() => (shortcutsOpen = true)}>
+              <KeyboardIcon />
+              Keyboard Shortcuts
+            </DropdownMenu.Item>
+            <DropdownMenu.Item onclick={() => (settingsOpen = true)}>
+              <SettingsIcon />
+              Settings
+            </DropdownMenu.Item>
+            <DropdownMenu.Item onclick={() => (aboutOpen = true)}>
+              <InfoIcon />
+              About
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+
+        <Dialog.Root bind:open={settingsOpen}>
           <Dialog.Content class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
             <Dialog.Header>
               <Dialog.Title>Settings</Dialog.Title>
@@ -712,28 +754,48 @@
                   aria-label="Show reserved gaps"
                 />
               </div>
-
-              <Separator />
-
-              <section aria-labelledby="about-title">
-                <h3 id="about-title" class="text-sm font-semibold">About</h3>
-                <dl class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-xs">
-                  <dt class="text-muted-foreground">Generator</dt>
-                  <dd>PeakRDL HTML Single</dd>
-                  <dt class="text-muted-foreground">Document</dt>
-                  <dd class="truncate" title={registerDocument.title}>{registerDocument.title}</dd>
-                  <dt class="text-muted-foreground">Format</dt>
-                  <dd>{registerDocument.formatVersion}</dd>
-                  {#each registerDocument.metadata as item (`${item.label}:${item.value}`)}
-                    <dt class="text-muted-foreground">{item.label}</dt>
-                    <dd class="whitespace-pre-wrap break-all font-mono">{item.value}</dd>
-                  {/each}
-                </dl>
-                {#if !registerDocument.metadata.length}
-                  <p class="mt-3 text-xs text-muted-foreground">No build metadata was embedded.</p>
-                {/if}
-              </section>
             </div>
+          </Dialog.Content>
+        </Dialog.Root>
+
+        <Dialog.Root bind:open={aboutOpen}>
+          <Dialog.Content class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
+            <Dialog.Header>
+              <Dialog.Title>About</Dialog.Title>
+              <Dialog.Description>Build information embedded in this document.</Dialog.Description>
+            </Dialog.Header>
+            <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 py-2 text-xs">
+              <dt class="text-muted-foreground">Format</dt>
+              <dd>{registerDocument.formatVersion}</dd>
+              {#each registerDocument.metadata as item (`${item.label}:${item.value}`)}
+                <dt class="text-muted-foreground">{item.label}</dt>
+                <dd class="whitespace-pre-wrap break-all font-mono">{item.value}</dd>
+              {/each}
+            </dl>
+            {#if !registerDocument.metadata.length}
+              <p class="text-xs text-muted-foreground">No build metadata was embedded.</p>
+            {/if}
+          </Dialog.Content>
+        </Dialog.Root>
+
+        <Dialog.Root bind:open={shortcutsOpen}>
+          <Dialog.Content class="border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
+            <Dialog.Header>
+              <Dialog.Title>Keyboard Shortcuts</Dialog.Title>
+              <Dialog.Description>Navigate the register documentation without a mouse.</Dialog.Description>
+            </Dialog.Header>
+            <dl class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-5 gap-y-3 py-2 text-sm">
+              <dt><kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs">Ctrl K</kbd></dt>
+              <dd>Focus search</dd>
+              <dt><kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs">/</kbd></dt>
+              <dd>Focus search</dd>
+              <dt><kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs">Esc</kbd></dt>
+              <dd>Leave search</dd>
+              <dt><kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs">↑ ↓</kbd></dt>
+              <dd>Move through search results</dd>
+              <dt><kbd class="rounded border bg-muted px-2 py-1 font-mono text-xs">Enter</kbd></dt>
+              <dd>Open the selected result</dd>
+            </dl>
           </Dialog.Content>
         </Dialog.Root>
       </div>
@@ -870,12 +932,7 @@
 {/snippet}
 
 {#snippet registerLayout(register: Register)}
-  <section aria-labelledby="bit-layout-title">
-    <div class="mb-3">
-      <div>
-        <p id="bit-layout-title" class="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary">Bit layout</p>
-      </div>
-    </div>
+  <section aria-label="Bit layout">
     <div class="overflow-x-auto rounded-lg border bg-card p-3">
       <div
         class="grid min-w-[42rem] gap-px overflow-hidden rounded-md bg-border"
