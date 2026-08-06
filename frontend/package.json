@@ -8,7 +8,7 @@
     "build:kit": "bunx --bun vite build",
     "check": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write .",
-    "lint": "prettier --write . && eslint .",
+    "lint": "prettier --write . 1>/dev/null && eslint .",
     "prepare": "cd .. && husky frontend/.husky",
     "test": "bun test"
   },
