@@ -283,7 +283,7 @@
     style={`--sidebar-width: ${sidebarWidth}px`}
 >
     <aside
-        class="print-hidden sticky top-0 hidden h-screen border-r border-sidebar-border/15 bg-sidebar text-sidebar-foreground md:block"
+        class="print-hidden sticky top-0 hidden h-screen border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:block"
     >
         <NavigationPanel
             title={registerDocument.title}
@@ -330,7 +330,7 @@
                     </Sheet.Trigger>
                     <Sheet.Content
                         side="left"
-                        class="w-[88vw] border-sidebar-border/15 bg-sidebar p-0 text-sidebar-foreground sm:max-w-sm"
+                        class="w-[88vw] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground sm:max-w-sm"
                     >
                         <Sheet.Title class="sr-only">Register navigation</Sheet.Title>
                         <Sheet.Description class="sr-only">
