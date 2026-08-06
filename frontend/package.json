@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "latest",
-    "@fontsource-variable/rubik": "latest",
+    "@fontsource-variable/inter": "latest",
     "@tanstack/svelte-hotkeys": "^0.10.0",
     "clsx": "latest",
     "effect": "latest",
