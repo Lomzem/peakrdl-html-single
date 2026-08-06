@@ -6,6 +6,7 @@
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import { ScrollArea } from "$lib/components/ui/scroll-area";
     import { Separator } from "$lib/components/ui/separator";
+    import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { NavigationNode, Register } from "$lib/domain";
     import { addressListItems, addressRangeLabel } from "./address-list";
 
@@ -22,8 +23,7 @@
         onToggle: (id: string) => void;
         onToggleAll: () => void;
         onNavigationModeChange: (mode: "document" | "address") => void;
-        onSelectRegister: (id: string) => void;
-        onSelectFolder: (node: NavigationNode) => void;
+        onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
     let {
@@ -39,20 +39,21 @@
         onToggle,
         onToggleAll,
         onNavigationModeChange,
-        onSelectRegister,
-        onSelectFolder,
+        onNavigate,
     }: Props = $props();
 </script>
 
 {#snippet navigationNode(node: NavigationNode, depth: number)}
     {#if node.kind === "register" && node.targetId}
         <Button
+            href={documentHref({ kind: "register", registerId: node.targetId })}
             variant={selectedRegisterId === node.targetId ? "secondary" : "ghost"}
             size="sm"
             class="h-auto min-h-7 w-full justify-start gap-2 whitespace-normal py-1 pr-2 text-left font-normal"
             style={`padding-left: ${0.5 + depth * 0.85}rem`}
             aria-current={selectedRegisterId === node.targetId ? "page" : undefined}
-            onclick={() => onSelectRegister(node.targetId || "")}
+            onclick={(event) =>
+                onNavigate(event, { kind: "register", registerId: node.targetId || "" })}
         >
             <span class="min-w-0 flex-1 truncate">{node.label}</span>
             {#if node.address}
@@ -77,11 +78,12 @@
                 />
             </Button>
             <Button
+                href={documentHref({ kind: "folder", folderId: node.id })}
                 variant={selectedFolderId === node.id ? "secondary" : "ghost"}
                 size="sm"
                 class="h-auto min-h-7 min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-1 text-left font-medium"
                 aria-current={selectedFolderId === node.id ? "page" : undefined}
-                onclick={() => onSelectFolder(node)}
+                onclick={(event) => onNavigate(event, { kind: "folder", folderId: node.id })}
             >
                 <span class="min-w-0 flex-1 truncate">{node.label}</span>
             </Button>

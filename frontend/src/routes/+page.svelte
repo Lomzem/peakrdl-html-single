@@ -14,6 +14,15 @@
     import { RegisterCalculatorState } from "$lib/components/register-document/calculator-state.svelte";
     import { Button } from "$lib/components/ui/button";
     import * as Sheet from "$lib/components/ui/sheet";
+    import {
+        documentHash,
+        enumDomId,
+        enumMemberDomId,
+        fieldDomId,
+        parseDocumentHash,
+        shouldHandleInApp,
+        type DocumentTarget,
+    } from "$lib/document-links";
     import type { NavigationNode } from "$lib/domain";
     import { readEmbeddedDocument } from "$lib/domain";
     import { readPreference, removePreference, writePreference } from "$lib/preferences";
@@ -126,25 +135,55 @@
         expanded = new Set([...expanded, ...(ancestorIds.get(id) || [])]);
     }
 
-    function hashFor(id: string, fieldId = ""): string {
-        const parameters = new URLSearchParams({ register: id });
-        if (fieldId) parameters.set("field", fieldId);
-        return parameters.toString();
-    }
+    async function showTarget(target: DocumentTarget, writeHash = true): Promise<void> {
+        if (target.kind === "folder") {
+            const folder = navigationById.get(target.folderId);
+            if (!folder) return;
+            selectedId = "";
+            selectedFolderId = folder.id;
+            expanded = new Set([...expanded, folder.id]);
+            mobileNavigationOpen = false;
+            query = "";
+            if (writeHash) location.hash = documentHash(target);
+            await tick();
+            document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
 
-    async function selectRegister(id: string, fieldId = "", writeHash = true): Promise<void> {
-        const register = registersById.get(id);
+        const register = registersById.get(target.registerId);
         if (!register) return;
+        const field = target.fieldId
+            ? register.fields.find((candidate) => candidate.id === target.fieldId)
+            : undefined;
+        const enumValue = field && field.enum?.name === target.enumName ? field.enum : undefined;
+        const member = target.memberName
+            ? enumValue?.members.find((candidate) => candidate.name === target.memberName)
+            : undefined;
+        const validTarget: DocumentTarget = {
+            kind: "register",
+            registerId: register.id,
+            ...(field ? { fieldId: field.id } : {}),
+            ...(enumValue ? { enumName: enumValue.name } : {}),
+            ...(member ? { memberName: member.name } : {}),
+        };
+
         calculator.selectRegister(register);
-        selectedId = id;
+        selectedId = register.id;
         selectedFolderId = "";
-        expandToRegister(id);
+        expandToRegister(register.id);
         mobileNavigationOpen = false;
         query = "";
-        if (writeHash) location.hash = hashFor(id, fieldId);
+        if (writeHash) location.hash = documentHash(validTarget);
         await tick();
-        if (fieldId) {
-            document.getElementById(`field-${encodeURIComponent(fieldId)}`)?.scrollIntoView({
+        const destinationId = member
+            ? enumMemberDomId(field!.id, enumValue!.name, member.name)
+            : enumValue
+              ? enumDomId(field!.id, enumValue.name)
+              : field
+                ? fieldDomId(field.id)
+                : "";
+        if (destinationId) {
+            document.getElementById(destinationId)?.scrollIntoView({
                 behavior: "smooth",
                 block: "start",
             });
@@ -153,31 +192,35 @@
         }
     }
 
-    async function selectFolder(node: NavigationNode, writeHash = true): Promise<void> {
-        selectedId = "";
-        selectedFolderId = node.id;
-        expanded = new Set([...expanded, node.id]);
-        mobileNavigationOpen = false;
-        query = "";
-        if (writeHash) location.hash = new URLSearchParams({ folder: node.id }).toString();
-        await tick();
-        document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+    function navigateTo(event: MouseEvent, target: DocumentTarget): void {
+        if (!shouldHandleInApp(event)) return;
+        event.preventDefault();
+        void showTarget(target);
     }
 
-    function selectSearchResult(result: SearchRecord): void {
-        void selectRegister(result.targetId, result.fieldId);
+    function selectTarget(target: DocumentTarget): void {
+        void showTarget(target);
+    }
+
+    function searchTarget(result: SearchRecord): DocumentTarget {
+        if (result.folderId) return { kind: "folder", folderId: result.folderId };
+        return {
+            kind: "register",
+            registerId: result.targetId,
+            ...(result.fieldId ? { fieldId: result.fieldId } : {}),
+            ...(result.enumName ? { enumName: result.enumName } : {}),
+            ...(result.memberName ? { memberName: result.memberName } : {}),
+        };
     }
 
     function applyHash(): void {
-        const parameters = new URLSearchParams(location.hash.slice(1));
-        const folderId = parameters.get("folder");
-        const id = parameters.get("register");
-        const folder = folderId ? navigationById.get(folderId) : undefined;
-        if (folder) void selectFolder(folder, false);
-        else if (id) void selectRegister(id, parameters.get("field") || "", false);
-        else if (registerDocument.registers[0]) {
-            void selectRegister(registerDocument.registers[0].id, "", false);
-        }
+        const target = parseDocumentHash(location.hash);
+        if (target) void showTarget(target, false);
+        else if (registerDocument.registers[0])
+            void showTarget(
+                { kind: "register", registerId: registerDocument.registers[0].id },
+                false,
+            );
     }
 
     function resizeSidebar(width: number): void {
@@ -249,8 +292,7 @@
             onToggle={toggleNode}
             onToggleAll={toggleAllNodes}
             onNavigationModeChange={setNavigationMode}
-            onSelectRegister={(id) => void selectRegister(id)}
-            onSelectFolder={(node) => void selectFolder(node)}
+            onNavigate={navigateTo}
         />
         <button
             type="button"
@@ -298,13 +340,18 @@
                             onToggle={toggleNode}
                             onToggleAll={toggleAllNodes}
                             onNavigationModeChange={setNavigationMode}
-                            onSelectRegister={(id) => void selectRegister(id)}
-                            onSelectFolder={(node) => void selectFolder(node)}
+                            onNavigate={navigateTo}
                         />
                     </Sheet.Content>
                 </Sheet.Root>
 
-                <DocumentSearch {searchService} bind:query onSelect={selectSearchResult} />
+                <DocumentSearch
+                    {searchService}
+                    bind:query
+                    {searchTarget}
+                    onSelect={selectTarget}
+                    onNavigate={navigateTo}
+                />
                 <DocumentMenu
                     formatVersion={registerDocument.formatVersion}
                     metadata={registerDocument.metadata}
@@ -321,7 +368,7 @@
                         breadcrumbs={selectedBreadcrumbs}
                         {showReservedGaps}
                         {calculator}
-                        onSelectFolder={(node) => void selectFolder(node)}
+                        onNavigate={navigateTo}
                     />
                 {:else if selectedFolder}
                     <FolderView
@@ -329,8 +376,7 @@
                         breadcrumbs={selectedFolderBreadcrumbs}
                         {registersById}
                         {showReservedGaps}
-                        onSelectRegister={(id) => void selectRegister(id)}
-                        onSelectFolder={(node) => void selectFolder(node)}
+                        onNavigate={navigateTo}
                     />
                 {:else}
                     <div class="grid min-h-[55vh] place-items-center text-center">

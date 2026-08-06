@@ -11,7 +11,10 @@ export interface SearchRecord extends Record<string, string> {
   label: string;
   context: string;
   targetId: string;
+  folderId: string;
   fieldId: string;
+  enumName: string;
+  memberName: string;
   address: string;
   identifier: string;
   group: string;
@@ -28,16 +31,17 @@ export class SearchIndexError extends Data.TaggedError("SearchIndexError")<{
 const fields = ["address", "identifier", "group", "field", "enum", "description", "text"];
 
 function navigationRecords(node: NavigationNode, records: SearchRecord[]): void {
-  const firstTarget = (candidate: NavigationNode): string =>
-    candidate.targetId || candidate.children.map(firstTarget).find(Boolean) || "";
   if (node.kind !== "register") {
     records.push({
       id: `navigation:${node.id}`,
       kind: node.kind === "doc-group" ? "group" : "structure",
       label: node.label,
       context: node.identifier,
-      targetId: firstTarget(node),
+      targetId: "",
+      folderId: node.id,
       fieldId: "",
+      enumName: "",
+      memberName: "",
       address: node.address || "",
       identifier: node.identifier,
       group: node.kind === "doc-group" ? node.identifier : "",
@@ -53,7 +57,10 @@ function navigationRecords(node: NavigationNode, records: SearchRecord[]): void 
 function fieldRecords(register: Register, field: RegisterField): SearchRecord[] {
   const common = {
     targetId: register.id,
+    folderId: "",
     fieldId: field.id,
+    enumName: "",
+    memberName: "",
     address: register.absoluteAddressHex || "",
     identifier: `${register.path} ${field.identifier} ${field.path}`,
     group: register.groupPath.join(" "),
@@ -78,6 +85,7 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
       id: `enum:${field.id}`,
       kind: "enum",
       label: field.enum.name,
+      enumName: field.enum.name,
       enum: field.enum.name,
       text: `${field.enum.name} ${field.name}`,
     });
@@ -87,6 +95,8 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
         id: `enum-member:${field.id}:${member.name}`,
         kind: "enum-member",
         label: member.name,
+        enumName: field.enum.name,
+        memberName: member.name,
         enum: `${field.enum.name} ${member.name}`,
         description: member.description,
         text: `${member.name} ${member.displayName} ${member.value} ${member.hex} ${member.description}`,
@@ -107,7 +117,10 @@ export function createSearchRecords(document: RegisterDocument): SearchRecord[] 
       label: register.name,
       context: `${register.path} · ${register.absoluteAddressHex || "No address"}`,
       targetId: register.id,
+      folderId: "",
       fieldId: "",
+      enumName: "",
+      memberName: "",
       address: `${register.absoluteAddressHex || ""} ${register.absoluteAddress || ""}`,
       identifier: `${register.identifier} ${register.path}`,
       group: register.groupPath.join(" "),

@@ -1,19 +1,29 @@
 <script lang="ts">
+    /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
     import SearchIcon from "@lucide/svelte/icons/search";
     import { createHotkey } from "@tanstack/svelte-hotkeys";
 
     import { Badge } from "$lib/components/ui/badge";
     import { Input } from "$lib/components/ui/input";
     import * as Kbd from "$lib/components/ui/kbd";
+    import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { SearchRecord, SearchService } from "$lib/search";
 
     interface Props {
         searchService: SearchService;
         query: string;
-        onSelect: (result: SearchRecord) => void;
+        searchTarget: (result: SearchRecord) => DocumentTarget;
+        onSelect: (target: DocumentTarget) => void;
+        onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let { searchService, query = $bindable(), onSelect }: Props = $props();
+    let {
+        searchService,
+        query = $bindable(),
+        searchTarget,
+        onSelect,
+        onNavigate,
+    }: Props = $props();
     let searchInput = $state<HTMLInputElement | null>(null);
     let searchFocused = $state(false);
     let activeSearchIndex = $state(-1);
@@ -68,7 +78,7 @@
             activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
         } else if (event.key === "Enter") {
             event.preventDefault();
-            onSelect(searchResults[Math.max(activeSearchIndex, 0)]);
+            onSelect(searchTarget(searchResults[Math.max(activeSearchIndex, 0)]));
         }
     }
 
@@ -115,14 +125,15 @@
         >
             {#if searchResults.length}
                 {#each searchResults as result, index (result.id)}
-                    <button
-                        type="button"
+                    {@const target = searchTarget(result)}
+                    <a
+                        href={documentHref(target)}
                         id={`search-result-${index}`}
                         role="option"
                         aria-selected={activeSearchIndex === index}
                         class="grid w-full grid-cols-[8rem_minmax(0,1fr)] items-start gap-2 rounded-md px-3 py-2 text-left hover:bg-muted focus-visible:bg-muted focus-visible:outline-none aria-selected:bg-muted"
                         onmouseenter={() => (activeSearchIndex = index)}
-                        onclick={() => onSelect(result)}
+                        onclick={(event) => onNavigate(event, target)}
                     >
                         <Badge variant="outline" class="mt-0.5 justify-self-start capitalize">
                             {result.kind.replace("-", " ")}
@@ -143,7 +154,7 @@
                                 {/each}
                             </span>
                         </span>
-                    </button>
+                    </a>
                 {/each}
             {:else}
                 <p class="px-3 py-7 text-center text-sm text-muted-foreground">

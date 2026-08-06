@@ -1,8 +1,10 @@
 <script lang="ts">
+    /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
     import { Button } from "$lib/components/ui/button";
     import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
     import * as Select from "$lib/components/ui/select";
+    import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { Register } from "$lib/domain";
 
     import type { RegisterCalculatorState, ValueMode } from "./calculator-state.svelte";
@@ -12,9 +14,10 @@
         register: Register;
         showReservedGaps: boolean;
         calculator: RegisterCalculatorState;
+        onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let { register, showReservedGaps, calculator }: Props = $props();
+    let { register, showReservedGaps, calculator, onNavigate }: Props = $props();
 </script>
 
 <Card class="gap-0 overflow-hidden py-0">
@@ -61,18 +64,22 @@
                     >
                         <div class="min-w-0">
                             <div class="flex min-w-0 items-center gap-2">
-                                <button
-                                    type="button"
+                                <a
+                                    href={documentHref({
+                                        kind: "register",
+                                        registerId: register.id,
+                                        fieldId: item.field.id,
+                                    })}
                                     class="min-w-0 truncate text-left text-sm font-medium hover:underline"
-                                    onclick={() =>
-                                        document
-                                            .getElementById(
-                                                `field-${encodeURIComponent(item.field.id)}`,
-                                            )
-                                            ?.scrollIntoView({ behavior: "smooth" })}
+                                    onclick={(event) =>
+                                        onNavigate(event, {
+                                            kind: "register",
+                                            registerId: register.id,
+                                            fieldId: item.field.id,
+                                        })}
                                 >
                                     {item.field.name}
-                                </button>
+                                </a>
                                 <code class="shrink-0 text-xs text-muted-foreground">
                                     [{bitRange(item.field)}]
                                 </code>

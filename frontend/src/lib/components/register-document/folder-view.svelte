@@ -1,4 +1,5 @@
 <script lang="ts">
+    /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
     import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
     import CpuIcon from "@lucide/svelte/icons/cpu";
     import FileStackIcon from "@lucide/svelte/icons/files";
@@ -7,6 +8,7 @@
 
     import { Badge } from "$lib/components/ui/badge";
     import { Separator } from "$lib/components/ui/separator";
+    import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { NavigationNode, Register } from "$lib/domain";
     import { addressListItems, addressRangeLabel } from "./address-list";
 
@@ -15,18 +17,10 @@
         breadcrumbs: ReadonlyArray<NavigationNode>;
         registersById: ReadonlyMap<string, Register>;
         showReservedGaps: boolean;
-        onSelectRegister: (id: string) => void;
-        onSelectFolder: (node: NavigationNode) => void;
+        onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let {
-        folder,
-        breadcrumbs,
-        registersById,
-        showReservedGaps,
-        onSelectRegister,
-        onSelectFolder,
-    }: Props = $props();
+    let { folder, breadcrumbs, registersById, showReservedGaps, onNavigate }: Props = $props();
     let items = $derived(addressListItems(folder.children, registersById, showReservedGaps));
 </script>
 
@@ -48,20 +42,27 @@
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as ancestor, index (ancestor.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
-                <button
-                    type="button"
+                <a
+                    href={documentHref({ kind: "folder", folderId: ancestor.id })}
                     class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onclick={() => onSelectFolder(ancestor)}
+                    onclick={(event) =>
+                        onNavigate(event, { kind: "folder", folderId: ancestor.id })}
                 >
                     {ancestor.label}
-                </button>
+                </a>
             {/each}
         </div>
     {/if}
 
     {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
     <h2 id="folder-title" class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-        {folder.label}
+        <a
+            href={documentHref({ kind: "folder", folderId: folder.id })}
+            class="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onclick={(event) => onNavigate(event, { kind: "folder", folderId: folder.id })}
+        >
+            {folder.label}
+        </a>
     </h2>
     <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
         {folder.identifier}
@@ -73,12 +74,17 @@
         <div class="grid gap-3">
             {#each items as item (item.kind === "node" ? item.node.id : `gap:${item.low}:${item.high}`)}
                 {#if item.kind === "node"}
-                    <button
+                    {@const target =
+                        item.node.kind === "register" && item.node.targetId
+                            ? ({
+                                  kind: "register",
+                                  registerId: item.node.targetId,
+                              } satisfies DocumentTarget)
+                            : ({ kind: "folder", folderId: item.node.id } satisfies DocumentTarget)}
+                    <a
+                        href={documentHref(target)}
                         class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onclick={() =>
-                            item.node.kind === "register" && item.node.targetId
-                                ? onSelectRegister(item.node.targetId)
-                                : onSelectFolder(item.node)}
+                        onclick={(event) => onNavigate(event, target)}
                     >
                         <span
                             class="grid size-9 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60"
@@ -96,7 +102,7 @@
                             </span>
                         </span>
                         <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground" />
-                    </button>
+                    </a>
                 {:else}
                     <div
                         class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"

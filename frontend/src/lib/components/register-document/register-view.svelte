@@ -1,9 +1,11 @@
 <script lang="ts">
+    /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
     import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
     import FolderTreeIcon from "@lucide/svelte/icons/folder-tree";
 
     import { Badge } from "$lib/components/ui/badge";
     import { Separator } from "$lib/components/ui/separator";
+    import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { NavigationNode, Register } from "$lib/domain";
     import { renderMarkdown } from "$lib/markdown";
 
@@ -18,10 +20,10 @@
         breadcrumbs: ReadonlyArray<NavigationNode>;
         showReservedGaps: boolean;
         calculator: RegisterCalculatorState;
-        onSelectFolder: (node: NavigationNode) => void;
+        onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let { register, breadcrumbs, showReservedGaps, calculator, onSelectFolder }: Props = $props();
+    let { register, breadcrumbs, showReservedGaps, calculator, onNavigate }: Props = $props();
     let copiedAddress = $state("");
 
     async function copyAddress(address: string): Promise<void> {
@@ -50,13 +52,13 @@
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as group, index (group.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
-                <button
-                    type="button"
+                <a
+                    href={documentHref({ kind: "folder", folderId: group.id })}
                     class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onclick={() => onSelectFolder(group)}
+                    onclick={(event) => onNavigate(event, { kind: "folder", folderId: group.id })}
                 >
                     {group.label}
-                </button>
+                </a>
             {/each}
         </div>
     {/if}
@@ -86,7 +88,14 @@
             {/if}
         </div>
         <h2 id="register-title" class="text-3xl font-semibold tracking-tight md:text-4xl">
-            {register.name}
+            <a
+                href={documentHref({ kind: "register", registerId: register.id })}
+                class="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onclick={(event) =>
+                    onNavigate(event, { kind: "register", registerId: register.id })}
+            >
+                {register.name}
+            </a>
         </h2>
         <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
             {register.identifier}
@@ -100,16 +109,16 @@
     {/if}
 
     <Separator class="my-5" />
-    <RegisterBitLayout {register} {showReservedGaps} />
+    <RegisterBitLayout {register} {showReservedGaps} {onNavigate} />
 
     <div class="mt-5">
-        <RegisterCalculator {register} {showReservedGaps} {calculator} />
+        <RegisterCalculator {register} {showReservedGaps} {calculator} {onNavigate} />
     </div>
 
     <div class="mt-5 space-y-4">
         {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
             {#if item.kind === "field"}
-                <RegisterFieldCard field={item.field} />
+                <RegisterFieldCard field={item.field} registerId={register.id} {onNavigate} />
             {:else}
                 <div
                     class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"

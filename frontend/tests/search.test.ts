@@ -75,7 +75,8 @@ const document: RegisterDocument = {
 };
 
 describe("search records", () => {
-  const service = new SearchService(createSearchRecords(document));
+  const records = createSearchRecords(document);
+  const service = new SearchService(records);
 
   test("finds exact hexadecimal and decimal addresses", () => {
     expect(service.search("0x24")[0]?.targetId).toBe("register:sample.control");
@@ -86,5 +87,16 @@ describe("search records", () => {
     expect(service.search("Configuration")[0]?.targetId).toBe("register:sample.control");
     expect(service.search("Operating Mode")[0]?.kind).toBe("field");
     expect(service.search("ACTIVE")[0]?.kind).toBe("enum-member");
+  });
+
+  test("preserves exact folder, enum, and enum-member link targets", () => {
+    expect(records.find((record) => record.kind === "structure")?.folderId).toBe("addrmap:sample");
+    expect(records.find((record) => record.kind === "enum")?.enumName).toBe("mode_e");
+    expect(records.find((record) => record.id.endsWith(":ACTIVE"))).toMatchObject({
+      targetId: "register:sample.control",
+      fieldId: "field:sample.control.mode",
+      enumName: "mode_e",
+      memberName: "ACTIVE",
+    });
   });
 });
