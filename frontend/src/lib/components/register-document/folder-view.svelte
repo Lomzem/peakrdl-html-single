@@ -8,10 +8,7 @@
     import { Badge } from "$lib/components/ui/badge";
     import { Separator } from "$lib/components/ui/separator";
     import type { NavigationNode, Register } from "$lib/domain";
-
-    type FolderListItem =
-        | { kind: "node"; node: NavigationNode }
-        | { kind: "gap"; id: string; low: bigint; high: bigint };
+    import { addressListItems, addressRangeLabel } from "./address-list";
 
     interface Props {
         folder: NavigationNode;
@@ -30,45 +27,7 @@
         onSelectRegister,
         onSelectFolder,
     }: Props = $props();
-    let items = $derived(folderListItems(folder));
-
-    function hex(value: bigint): string {
-        return `0x${value.toString(16)}`;
-    }
-
-    function addressGapLabel(low: bigint, high: bigint): string {
-        return low === high ? hex(low) : `${hex(low)}-${hex(high)}`;
-    }
-
-    function folderListItems(node: NavigationNode): FolderListItem[] {
-        if (!showReservedGaps) return node.children.map((child) => ({ kind: "node", node: child }));
-
-        const items: FolderListItem[] = [];
-        let previousEnd: bigint | null = null;
-        for (const child of node.children) {
-            const register = child.targetId ? registersById.get(child.targetId) : undefined;
-            if (child.kind !== "register" || !register?.absoluteAddress) {
-                items.push({ kind: "node", node: child });
-                previousEnd = null;
-                continue;
-            }
-
-            const address = BigInt(register.absoluteAddress);
-            if (previousEnd !== null && address > previousEnd + 1n) {
-                const low = previousEnd + 1n;
-                items.push({
-                    kind: "gap",
-                    id: `gap:${low}:${address - 1n}`,
-                    low,
-                    high: address - 1n,
-                });
-            }
-            items.push({ kind: "node", node: child });
-            const byteWidth = BigInt(Math.max(1, Math.ceil(register.width / 8)));
-            previousEnd = address + byteWidth - 1n;
-        }
-        return items;
-    }
+    let items = $derived(addressListItems(folder.children, registersById, showReservedGaps));
 </script>
 
 {#snippet kindIcon(node: NavigationNode)}
@@ -112,7 +71,7 @@
 
     {#if items.length}
         <div class="grid gap-3">
-            {#each items as item (item.kind === "node" ? item.node.id : item.id)}
+            {#each items as item (item.kind === "node" ? item.node.id : `gap:${item.low}:${item.high}`)}
                 {#if item.kind === "node"}
                     <button
                         class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -143,7 +102,7 @@
                         class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"
                     >
                         <span>Reserved</span>
-                        <code>@{addressGapLabel(item.low, item.high)}</code>
+                        <code>@{addressRangeLabel(item.low, item.high)}</code>
                     </div>
                 {/if}
             {/each}

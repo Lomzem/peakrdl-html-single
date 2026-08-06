@@ -137,7 +137,7 @@
 
 <Dialog.Root bind:open={aboutOpen}>
     <Dialog.Content
-        class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md"
+        class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-lg"
     >
         <Dialog.Header>
             <Dialog.Title>About</Dialog.Title>

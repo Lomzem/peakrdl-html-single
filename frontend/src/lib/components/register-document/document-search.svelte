@@ -24,6 +24,14 @@
         searchInput?.select();
     }
 
+    function handleFocusOut(event: FocusEvent): void {
+        const nextTarget = event.relatedTarget;
+        const search = event.currentTarget as HTMLDivElement;
+        if (!(nextTarget instanceof Node) || !search.contains(nextTarget)) {
+            searchFocused = false;
+        }
+    }
+
     function matchedTextParts(
         value: string,
         search: string,
@@ -76,7 +84,7 @@
     );
 </script>
 
-<div class="relative min-w-0 flex-1">
+<div class="relative min-w-0 flex-1" onfocusout={handleFocusOut}>
     <SearchIcon
         class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
     />
@@ -95,7 +103,6 @@
             : undefined}
         autocomplete="off"
         onfocus={() => (searchFocused = true)}
-        onblur={() => window.setTimeout(() => (searchFocused = false), 100)}
         oninput={() => (activeSearchIndex = -1)}
         onkeydown={handleKeydown}
     />
@@ -109,6 +116,7 @@
             {#if searchResults.length}
                 {#each searchResults as result, index (result.id)}
                     <button
+                        type="button"
                         id={`search-result-${index}`}
                         role="option"
                         aria-selected={activeSearchIndex === index}

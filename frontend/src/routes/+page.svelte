@@ -28,22 +28,64 @@
     const navigationById = new Map<string, NavigationNode>();
     const ancestorIds = new Map<string, string[]>();
     const navigationAncestorIds = new Map<string, string[]>();
+    const registerNavigationNodes: NavigationNode[] = [];
 
     function recordAncestors(node: NavigationNode, ancestors: string[]): void {
         navigationById.set(node.id, node);
         navigationAncestorIds.set(node.id, ancestors);
-        if (node.targetId) ancestorIds.set(node.targetId, ancestors);
+        if (node.targetId) {
+            ancestorIds.set(node.targetId, ancestors);
+            registerNavigationNodes.push(node);
+        }
         for (const child of node.children) recordAncestors(child, [...ancestors, node.id]);
     }
     recordAncestors(registerDocument.navigation, []);
 
+    const addressNavigation: NavigationNode = {
+        ...registerDocument.navigation,
+        children: registerNavigationNodes.toSorted((left, right) => {
+            const leftAddress = registersById.get(left.targetId || "")?.absoluteAddress;
+            const rightAddress = registersById.get(right.targetId || "")?.absoluteAddress;
+            if (leftAddress === null || leftAddress === undefined) return 1;
+            if (rightAddress === null || rightAddress === undefined) return -1;
+            const comparison = BigInt(leftAddress) - BigInt(rightAddress);
+            return comparison < 0n
+                ? -1
+                : comparison > 0n
+                  ? 1
+                  : left.label.localeCompare(right.label);
+        }),
+    };
+
+    function expandableIds(root: NavigationNode): string[] {
+        const ids: string[] = [];
+        const visit = (node: NavigationNode) => {
+            if (node.kind === "register" && node.targetId) return;
+            ids.push(node.id);
+            node.children.forEach(visit);
+        };
+        visit(root);
+        return ids;
+    }
+
+    const documentExpandableIds = expandableIds(registerDocument.navigation);
+    const addressExpandableIds = expandableIds(addressNavigation);
+
     let selectedId = $state(registerDocument.registers[0]?.id || "");
     let selectedFolderId = $state("");
     let expanded = $state<Set<string>>(new Set([registerDocument.navigation.id]));
+    let navigationMode = $state<"document" | "address">("document");
     let query = $state("");
     let mobileNavigationOpen = $state(false);
     let sidebarWidth = $state(304);
     let showReservedGaps = $state(true);
+    let navigationRoot = $derived(
+        navigationMode === "address" ? addressNavigation : registerDocument.navigation,
+    );
+    let visibleExpandableIds = $derived(
+        navigationMode === "address" ? addressExpandableIds : documentExpandableIds,
+    );
+    let allNavigationExpanded = $derived(visibleExpandableIds.every((id) => expanded.has(id)));
     let selectedRegister = $derived(registersById.get(selectedId));
     let selectedFolder = $derived(navigationById.get(selectedFolderId));
     let selectedBreadcrumbs = $derived(
@@ -63,6 +105,21 @@
         else next.add(id);
         expanded = next;
         writePreference("peakrdl-expanded", JSON.stringify([...next]));
+    }
+
+    function toggleAllNodes(): void {
+        const next = new Set(expanded);
+        for (const id of visibleExpandableIds) {
+            if (allNavigationExpanded) next.delete(id);
+            else next.add(id);
+        }
+        expanded = next;
+        writePreference("peakrdl-expanded", JSON.stringify([...next]));
+    }
+
+    function setNavigationMode(mode: "document" | "address"): void {
+        navigationMode = mode;
+        writePreference("peakrdl-navigation-mode", mode);
     }
 
     function expandToRegister(id: string): void {
@@ -152,12 +209,14 @@
         const savedExpanded = readPreference("peakrdl-expanded");
         if (savedExpanded) {
             try {
-                expanded = new Set([registerDocument.navigation.id, ...JSON.parse(savedExpanded)]);
+                expanded = new Set(JSON.parse(savedExpanded));
             } catch {
                 removePreference("peakrdl-expanded");
             }
         }
 
+        navigationMode =
+            readPreference("peakrdl-navigation-mode") === "address" ? "address" : "document";
         showReservedGaps = readPreference("peakrdl-show-reserved-gaps") !== "false";
         applyHash();
         window.addEventListener("hashchange", applyHash);
@@ -179,11 +238,17 @@
     >
         <NavigationPanel
             title={registerDocument.title}
-            root={registerDocument.navigation}
+            root={navigationRoot}
             selectedRegisterId={selectedId}
             {selectedFolderId}
             {expanded}
+            {registersById}
+            {showReservedGaps}
+            {navigationMode}
+            {allNavigationExpanded}
             onToggle={toggleNode}
+            onToggleAll={toggleAllNodes}
+            onNavigationModeChange={setNavigationMode}
             onSelectRegister={(id) => void selectRegister(id)}
             onSelectFolder={(node) => void selectFolder(node)}
         />
@@ -222,11 +287,17 @@
                         </Sheet.Description>
                         <NavigationPanel
                             title={registerDocument.title}
-                            root={registerDocument.navigation}
+                            root={navigationRoot}
                             selectedRegisterId={selectedId}
                             {selectedFolderId}
                             {expanded}
+                            {registersById}
+                            {showReservedGaps}
+                            {navigationMode}
+                            {allNavigationExpanded}
                             onToggle={toggleNode}
+                            onToggleAll={toggleAllNodes}
+                            onNavigationModeChange={setNavigationMode}
                             onSelectRegister={(id) => void selectRegister(id)}
                             onSelectFolder={(node) => void selectFolder(node)}
                         />

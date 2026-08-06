@@ -1,10 +1,13 @@
 <script lang="ts">
     import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
+    import FolderTreeIcon from "@lucide/svelte/icons/folder-tree";
 
     import { Button } from "$lib/components/ui/button";
+    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import { ScrollArea } from "$lib/components/ui/scroll-area";
     import { Separator } from "$lib/components/ui/separator";
-    import type { NavigationNode } from "$lib/domain";
+    import type { NavigationNode, Register } from "$lib/domain";
+    import { addressListItems, addressRangeLabel } from "./address-list";
 
     interface Props {
         title: string;
@@ -12,7 +15,13 @@
         selectedRegisterId: string;
         selectedFolderId: string;
         expanded: Set<string>;
+        registersById: ReadonlyMap<string, Register>;
+        showReservedGaps: boolean;
+        navigationMode: "document" | "address";
+        allNavigationExpanded: boolean;
         onToggle: (id: string) => void;
+        onToggleAll: () => void;
+        onNavigationModeChange: (mode: "document" | "address") => void;
         onSelectRegister: (id: string) => void;
         onSelectFolder: (node: NavigationNode) => void;
     }
@@ -23,7 +32,13 @@
         selectedRegisterId,
         selectedFolderId,
         expanded,
+        registersById,
+        showReservedGaps,
+        navigationMode,
+        allNavigationExpanded,
         onToggle,
+        onToggleAll,
+        onNavigationModeChange,
         onSelectRegister,
         onSelectFolder,
     }: Props = $props();
@@ -72,8 +87,21 @@
             </Button>
         </div>
         {#if expanded.has(node.id)}
-            {#each node.children as child (child.id)}
-                {@render navigationNode(child, depth + 1)}
+            {#each addressListItems(node.children, registersById, showReservedGaps) as item (item.kind === "node" ? item.node.id : `${node.id}:gap:${item.low}:${item.high}`)}
+                {#if item.kind === "node"}
+                    {@render navigationNode(item.node, depth + 1)}
+                {:else}
+                    <div
+                        class="mx-2 my-0.5 flex min-h-7 items-center gap-2 rounded-md border border-dashed border-muted-foreground/35 bg-muted/45 py-1 pr-2 text-xs text-muted-foreground"
+                        style={`padding-left: ${0.5 + (depth + 1) * 0.85}rem`}
+                        aria-label={`Reserved address range ${addressRangeLabel(item.low, item.high)}`}
+                    >
+                        <span class="min-w-0 flex-1 truncate font-medium italic">Reserved</span>
+                        <span class="shrink-0 font-mono text-[0.68rem]">
+                            {addressRangeLabel(item.low, item.high)}
+                        </span>
+                    </div>
+                {/if}
             {/each}
         {/if}
     {/if}
@@ -84,6 +112,42 @@
         <h1 class="mt-1 line-clamp-2 text-lg font-semibold leading-tight tracking-tight">
             {title}
         </h1>
+        <div class="mt-3 flex items-center gap-2">
+            <Button variant="outline" size="sm" class="flex-1" onclick={onToggleAll}>
+                {allNavigationExpanded ? "Collapse All" : "Expand All"}
+            </Button>
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                    {#snippet child({ props })}
+                        <Button
+                            {...props}
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Change navigation order"
+                            title="Change navigation order"
+                        >
+                            <FolderTreeIcon />
+                        </Button>
+                    {/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end" class="w-44 bg-card text-card-foreground">
+                    <DropdownMenu.Label>Navigation order</DropdownMenu.Label>
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.RadioGroup
+                        value={navigationMode}
+                        onValueChange={(value) =>
+                            onNavigationModeChange(value as "document" | "address")}
+                    >
+                        <DropdownMenu.RadioItem value="document">
+                            Document groups
+                        </DropdownMenu.RadioItem>
+                        <DropdownMenu.RadioItem value="address">
+                            Address order
+                        </DropdownMenu.RadioItem>
+                    </DropdownMenu.RadioGroup>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
+        </div>
     </div>
     <Separator />
     <ScrollArea class="min-h-0 flex-1 py-2">
