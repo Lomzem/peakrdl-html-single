@@ -153,12 +153,14 @@
             {/each}
         </div>
 
-        <div class="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div
+            class="mt-4 grid gap-3 rounded-lg border p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+        >
             <label class="grid gap-1.5">
-                <span class="text-sm font-medium">Encoded register value</span>
+                <span class="text-sm font-semibold">Encoded register value</span>
                 <Input
                     value={calculator.encodedDraft}
-                    class="font-mono"
+                    class="h-10 bg-background font-mono text-base font-medium text-primary shadow-xs"
                     aria-invalid={Boolean(calculator.encodedError)}
                     oninput={(event) =>
                         calculator.updateEncodedValue(
@@ -169,7 +171,7 @@
             </label>
             <Button
                 variant="outline"
-                class="w-24"
+                class="h-10 w-24 bg-background"
                 onclick={() => calculator.copyEncodedValue(register)}
             >
                 {#if calculator.copiedEncodedValue}
