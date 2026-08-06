@@ -3,12 +3,12 @@ import type { Register, RegisterField } from "$lib/domain";
 export type BitLayoutItem =
   { kind: "field"; field: RegisterField } | { kind: "gap"; low: number; high: number };
 
-export function bitRange(field: RegisterField): string {
-  return field.high === field.low ? `${field.low}` : `${field.high}:${field.low}`;
+export function bitRange(field: Pick<RegisterField, "high" | "low">): string {
+  return `[${field.high}:${field.low}]`;
 }
 
 export function bitGapLabel(low: number, high: number): string {
-  return low === high ? `${low}` : `${low}-${high}`;
+  return `[${high}:${low}]`;
 }
 
 export function valueMask(width: number): bigint {

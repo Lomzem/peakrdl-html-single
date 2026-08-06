@@ -126,7 +126,7 @@
                     class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"
                 >
                     <span class="font-medium">Reserved</span>
-                    <code>[{bitGapLabel(item.low, item.high)}]</code>
+                    <code>{bitGapLabel(item.low, item.high)}</code>
                 </div>
             {/if}
         {/each}

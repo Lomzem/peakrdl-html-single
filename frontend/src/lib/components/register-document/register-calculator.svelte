@@ -82,7 +82,7 @@
                                 class="flex items-center justify-between border-b border-dashed bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground last:border-b-0"
                             >
                                 <span>Reserved</span>
-                                <code>[{bitGapLabel(item.low, item.high)}]</code>
+                                <code>{bitGapLabel(item.low, item.high)}</code>
                             </div>
                         {:else}
                             <div
@@ -107,7 +107,7 @@
                                             {item.field.name}
                                         </a>
                                         <code class="shrink-0 text-xs text-muted-foreground">
-                                            [{bitRange(item.field)}]
+                                            {bitRange(item.field)}
                                         </code>
                                     </div>
                                     <p

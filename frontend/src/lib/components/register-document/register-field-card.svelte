@@ -65,7 +65,7 @@
                         </a>
                     </h3>
                     <p class="mt-1 font-mono text-xs text-primary">
-                        [{bitRange(field)}] · {field.identifier}
+                        {bitRange(field)} · {field.identifier}
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">

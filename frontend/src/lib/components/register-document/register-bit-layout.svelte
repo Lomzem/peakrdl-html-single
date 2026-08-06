@@ -30,7 +30,7 @@
                         })}
                         class={`row-start-1 flex min-h-16 flex-col items-center justify-center overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
                         style={`grid-column: ${register.width - item.field.high} / ${register.width - item.field.low + 1}`}
-                        title={`${item.field.name} [${bitRange(item.field)}]`}
+                        title={`${item.field.name} ${bitRange(item.field)}`}
                         onclick={(event) =>
                             onNavigate(event, {
                                 kind: "register",
@@ -40,7 +40,7 @@
                     >
                         <span class="block truncate font-medium">{item.field.name}</span>
                         <span class="mt-1 block font-mono text-muted-foreground">
-                            [{bitRange(item.field)}]
+                            {bitRange(item.field)}
                         </span>
                     </a>
                 {:else}
@@ -49,7 +49,7 @@
                         style={`grid-column: ${register.width - item.high} / ${register.width - item.low + 1}`}
                     >
                         <span class="font-medium">Reserved</span>
-                        <span class="mt-1 font-mono">[{bitGapLabel(item.low, item.high)}]</span>
+                        <span class="mt-1 font-mono">{bitGapLabel(item.low, item.high)}</span>
                     </div>
                 {/if}
             {/each}
