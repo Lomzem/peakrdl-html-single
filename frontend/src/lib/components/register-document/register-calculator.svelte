@@ -1,6 +1,7 @@
 <script lang="ts">
     /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
     import CalculatorIcon from "@lucide/svelte/icons/calculator";
+    import CheckIcon from "@lucide/svelte/icons/check";
 
     import { Button } from "$lib/components/ui/button";
     import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
@@ -166,8 +167,17 @@
                         )}
                 />
             </label>
-            <Button variant="outline" onclick={() => calculator.copyEncodedValue(register)}>
-                {calculator.copiedEncodedValue ? "Copied" : "Copy"}
+            <Button
+                variant="outline"
+                class="w-24"
+                onclick={() => calculator.copyEncodedValue(register)}
+            >
+                {#if calculator.copiedEncodedValue}
+                    <CheckIcon />
+                    Copied
+                {:else}
+                    Copy
+                {/if}
             </Button>
         </div>
         {#if calculator.encodedError}
