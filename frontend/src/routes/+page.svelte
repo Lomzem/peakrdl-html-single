@@ -1,6 +1,7 @@
 <script lang="ts">
     import "../app.css";
 
+    import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
     import CpuIcon from "@lucide/svelte/icons/cpu";
     import MenuIcon from "@lucide/svelte/icons/menu";
     import { Effect } from "effect";
@@ -88,6 +89,7 @@
     let mobileNavigationOpen = $state(false);
     let sidebarWidth = $state(304);
     let showReservedGaps = $state(true);
+    let showBackToTop = $state(false);
     let navigationRoot = $derived(
         navigationMode === "address" ? addressNavigation : registerDocument.navigation,
     );
@@ -216,11 +218,7 @@
     function applyHash(): void {
         const target = parseDocumentHash(location.hash);
         if (target) void showTarget(target, false);
-        else
-            void showTarget(
-                { kind: "folder", folderId: registerDocument.navigation.id },
-                false,
-            );
+        else void showTarget({ kind: "folder", folderId: registerDocument.navigation.id }, false);
     }
 
     function resizeSidebar(width: number): void {
@@ -246,6 +244,14 @@
             event.preventDefault();
             resizeSidebar(sidebarWidth + (event.key === "ArrowLeft" ? -16 : 16));
         }
+    }
+
+    function handleMainScroll(event: Event): void {
+        showBackToTop = (event.currentTarget as HTMLElement).scrollTop > 320;
+    }
+
+    function scrollToTop(): void {
+        document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     onMount(() => {
@@ -360,7 +366,10 @@
             </div>
         </header>
 
-        <main class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6">
+        <main
+            class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6"
+            onscroll={handleMainScroll}
+        >
             <div class="mx-auto max-w-6xl">
                 {#if selectedRegister}
                     <RegisterView
@@ -392,6 +401,16 @@
                     </div>
                 {/if}
             </div>
+            {#if showBackToTop && (selectedRegister || selectedFolder)}
+                <Button
+                    variant="secondary"
+                    class="print-hidden fixed right-5 bottom-5 z-20 shadow-lg md:right-8 md:bottom-8"
+                    onclick={scrollToTop}
+                >
+                    <ArrowUpIcon />
+                    Back to top
+                </Button>
+            {/if}
         </main>
     </div>
 </div>
