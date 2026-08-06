@@ -115,7 +115,9 @@
         <RegisterCalculator {register} {showReservedGaps} {calculator} {onNavigate} />
     </div>
 
-    <div class="mt-5 space-y-4">
+    <Separator class="my-5" />
+
+    <div class="space-y-4">
         {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
             {#if item.kind === "field"}
                 <RegisterFieldCard field={item.field} registerId={register.id} {onNavigate} />

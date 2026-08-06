@@ -28,7 +28,7 @@
                             registerId: register.id,
                             fieldId: item.field.id,
                         })}
-                        class={`row-start-1 min-h-16 overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
+                        class={`row-start-1 flex min-h-16 flex-col items-center justify-center overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
                         style={`grid-column: ${register.width - item.field.high} / ${register.width - item.field.low + 1}`}
                         title={`${item.field.name} [${bitRange(item.field)}]`}
                         onclick={(event) =>

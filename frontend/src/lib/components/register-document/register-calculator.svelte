@@ -1,5 +1,7 @@
 <script lang="ts">
     /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
+    import CalculatorIcon from "@lucide/svelte/icons/calculator";
+
     import { Button } from "$lib/components/ui/button";
     import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
@@ -23,7 +25,10 @@
 <Card class="gap-0 overflow-hidden py-0">
     <CardHeader class="border-b bg-muted/25 p-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 class="font-semibold">Register calculator</h3>
+            <h3 class="flex items-center gap-2 text-xl font-semibold tracking-tight">
+                <CalculatorIcon class="size-5 text-primary" />
+                Register Calculator
+            </h3>
             <div class="flex flex-wrap items-center gap-2">
                 <div
                     class="flex rounded-lg border bg-background p-0.5"
