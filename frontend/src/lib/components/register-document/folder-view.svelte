@@ -83,7 +83,7 @@
                             : ({ kind: "folder", folderId: item.node.id } satisfies DocumentTarget)}
                     <a
                         href={documentHref(target)}
-                        class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onclick={(event) => onNavigate(event, target)}
                     >
                         <span

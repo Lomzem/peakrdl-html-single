@@ -37,7 +37,7 @@
                 </h3>
                 <div class="flex flex-wrap items-center gap-2">
                     <div
-                        class="flex rounded-lg border bg-background p-0.5"
+                        class="flex rounded-lg border bg-background p-0.5 text-foreground"
                         aria-label="Value display mode"
                     >
                         {#each ["binary", "decimal", "hex", "enum"] as mode (mode)}
@@ -138,14 +138,12 @@
                                                     )}
                                             >
                                                 <Select.Trigger
-                                                    class="min-w-0 flex-1 bg-background font-mono"
+                                                    class="min-w-0 flex-1 bg-background font-mono text-foreground"
                                                 >
                                                     {member?.displayName ||
                                                         `Unknown (${calculator.formatNumericValue(value, item.field.width, "hex")})`}
                                                 </Select.Trigger>
-                                                <Select.Content
-                                                    class="bg-card text-card-foreground"
-                                                >
+                                                <Select.Content>
                                                     {#each item.field.enum.members as option (option.name)}
                                                         <Select.Item value={option.value}>
                                                             {option.displayName}
@@ -202,7 +200,7 @@
                     </label>
                     <Button
                         variant="outline"
-                        class="h-10 w-24 bg-background"
+                        class="h-10 w-24 bg-background text-foreground"
                         onclick={() => calculator.copyEncodedValue(register)}
                     >
                         {#if calculator.copiedEncodedValue}

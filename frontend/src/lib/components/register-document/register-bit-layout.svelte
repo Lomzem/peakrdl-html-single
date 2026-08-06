@@ -15,7 +15,7 @@
 </script>
 
 <section aria-label="Bit layout">
-    <div class="overflow-x-auto rounded-lg border bg-card p-3">
+    <div class="overflow-x-auto rounded-lg border bg-card p-3 text-card-foreground">
         <div
             class="grid min-w-[42rem] gap-px overflow-hidden rounded-md bg-border"
             style={`grid-template-columns: repeat(${Math.max(register.width, 1)}, minmax(0, 1fr))`}
@@ -28,7 +28,7 @@
                             registerId: register.id,
                             fieldId: item.field.id,
                         })}
-                        class={`row-start-1 flex min-h-16 flex-col items-center justify-center overflow-hidden border-y px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-muted ${index % 2 ? "border-border bg-muted/70" : "border-border bg-secondary"}`}
+                        class={`row-start-1 flex min-h-16 flex-col items-center justify-center overflow-hidden border-y border-border px-1 text-center text-[0.65rem] leading-tight transition-colors hover:bg-accent hover:text-accent-foreground ${index % 2 ? "bg-muted/70 text-foreground" : "bg-secondary text-secondary-foreground"}`}
                         style={`grid-column: ${register.width - item.field.high} / ${register.width - item.field.low + 1}`}
                         title={`${item.field.name} ${bitRange(item.field)}`}
                         onclick={(event) =>
@@ -39,7 +39,7 @@
                             })}
                     >
                         <span class="block truncate font-medium">{item.field.name}</span>
-                        <span class="mt-1 block font-mono text-muted-foreground">
+                        <span class="mt-1 block font-mono opacity-70">
                             {bitRange(item.field)}
                         </span>
                     </a>

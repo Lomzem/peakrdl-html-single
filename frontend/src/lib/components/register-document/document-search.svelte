@@ -101,7 +101,7 @@
     <Input
         bind:ref={searchInput}
         bind:value={query}
-        class="h-9 bg-card pl-9 pr-16 font-mono text-sm"
+        class="h-9 bg-card pl-9 pr-16 font-mono text-sm text-card-foreground"
         placeholder="Search by address, register, field, or enum"
         aria-label="Search registers"
         aria-keyshortcuts="Control+K /"
@@ -121,7 +121,7 @@
         <div
             id="search-results"
             role="listbox"
-            class="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-50 max-h-[65vh] overflow-auto rounded-lg border bg-card p-1.5 text-card-foreground shadow-xl"
+            class="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-50 max-h-[65vh] overflow-auto rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-xl"
         >
             {#if searchResults.length}
                 {#each searchResults as result, index (result.id)}

@@ -47,9 +47,9 @@
     {#if node.kind === "register" && node.targetId}
         <Button
             href={documentHref({ kind: "register", registerId: node.targetId })}
-            variant={selectedRegisterId === node.targetId ? "secondary" : "ghost"}
+            variant="ghost"
             size="sm"
-            class="h-auto min-h-7 w-full justify-start gap-2 whitespace-normal py-1 pr-2 text-left font-normal"
+            class={`h-auto min-h-7 w-full justify-start gap-2 whitespace-normal py-1 pr-2 text-left font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${selectedRegisterId === node.targetId ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
             style={`padding-left: ${0.5 + depth * 0.85}rem`}
             aria-current={selectedRegisterId === node.targetId ? "page" : undefined}
             onclick={(event) =>
@@ -57,7 +57,7 @@
         >
             <span class="min-w-0 flex-1 truncate">{node.label}</span>
             {#if node.address}
-                <span class="font-mono text-[0.68rem] text-muted-foreground">{node.address}</span>
+                <span class="font-mono text-[0.68rem] opacity-70">{node.address}</span>
             {/if}
         </Button>
     {:else}
@@ -79,9 +79,9 @@
             </Button>
             <Button
                 href={documentHref({ kind: "folder", folderId: node.id })}
-                variant={selectedFolderId === node.id ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
-                class="h-auto min-h-7 min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-1 text-left font-medium"
+                class={`h-auto min-h-7 min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-1 text-left font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${selectedFolderId === node.id ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
                 aria-current={selectedFolderId === node.id ? "page" : undefined}
                 onclick={(event) => onNavigate(event, { kind: "folder", folderId: node.id })}
             >
@@ -132,7 +132,7 @@
                         </Button>
                     {/snippet}
                 </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end" class="w-44 bg-card text-card-foreground">
+                <DropdownMenu.Content align="end" class="w-44">
                     <DropdownMenu.Label>Navigation order</DropdownMenu.Label>
                     <DropdownMenu.Separator />
                     <DropdownMenu.RadioGroup

@@ -73,7 +73,7 @@
             </Button>
         {/snippet}
     </DropdownMenu.Trigger>
-    <DropdownMenu.Content align="end" class="w-52 bg-card text-card-foreground">
+    <DropdownMenu.Content align="end" class="w-52">
         <DropdownMenu.Item onclick={() => (shortcutsOpen = true)}>
             <KeyboardIcon />
             Keyboard Shortcuts
@@ -90,9 +90,7 @@
 </DropdownMenu.Root>
 
 <Dialog.Root bind:open={settingsOpen}>
-    <Dialog.Content
-        class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md"
-    >
+    <Dialog.Content class="max-h-[85vh] overflow-y-auto border shadow-xl ring-0 sm:max-w-md">
         <Dialog.Header>
             <Dialog.Title>Settings</Dialog.Title>
             <Dialog.Description>Customize the register documentation view.</Dialog.Description>
@@ -108,8 +106,10 @@
                     value={theme}
                     onValueChange={(value) => applyTheme(value as Theme)}
                 >
-                    <Select.Trigger class="w-32 bg-background">{themeLabel(theme)}</Select.Trigger>
-                    <Select.Content class="bg-card text-card-foreground">
+                    <Select.Trigger class="w-32 bg-background text-foreground">
+                        {themeLabel(theme)}
+                    </Select.Trigger>
+                    <Select.Content>
                         <Select.Item value="light">Light</Select.Item>
                         <Select.Item value="dark">Dark</Select.Item>
                         <Select.Item value="system">System</Select.Item>
@@ -127,7 +127,7 @@
                 <Switch
                     bind:checked={showReservedGaps}
                     onCheckedChange={setReservedGaps}
-                    class="border-border ring-1 ring-border data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
+                    class="border-border ring-1 ring-border"
                     aria-label="Show reserved gaps"
                 />
             </div>
@@ -136,9 +136,7 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={aboutOpen}>
-    <Dialog.Content
-        class="max-h-[85vh] overflow-y-auto border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-lg"
-    >
+    <Dialog.Content class="max-h-[85vh] overflow-y-auto border shadow-xl ring-0 sm:max-w-lg">
         <Dialog.Header>
             <Dialog.Title>About</Dialog.Title>
             <Dialog.Description>Build information embedded in this document.</Dialog.Description>
@@ -158,7 +156,7 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={shortcutsOpen}>
-    <Dialog.Content class="border bg-card text-card-foreground shadow-xl ring-0 sm:max-w-md">
+    <Dialog.Content class="border shadow-xl ring-0 sm:max-w-md">
         <Dialog.Header>
             <Dialog.Title>Keyboard Shortcuts</Dialog.Title>
             <Dialog.Description>
