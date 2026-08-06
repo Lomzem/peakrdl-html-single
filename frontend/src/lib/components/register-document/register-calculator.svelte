@@ -90,51 +90,57 @@
                                 </code>
                             </div>
                             <p class="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                                {item.field.identifier}
+                                {calculator.fieldResetLabel(item.field)}
                             </p>
                         </div>
                         <div class="grid gap-1">
-                            {#if calculator.valueMode === "enum" && item.field.enum}
-                                {@const value = calculator.fieldValue(register, item.field)}
-                                {@const member = calculator.matchingEnumMember(item.field, value)}
-                                <Select.Root
-                                    type="single"
-                                    value={value.toString()}
-                                    onValueChange={(selected) =>
-                                        calculator.updateFieldValue(
-                                            register,
-                                            item.field,
-                                            BigInt(selected),
+                            <div class="flex min-w-0 items-center gap-2">
+                                {#if calculator.valueMode === "enum" && item.field.enum}
+                                    {@const value = calculator.fieldValue(register, item.field)}
+                                    {@const member = calculator.matchingEnumMember(
+                                        item.field,
+                                        value,
+                                    )}
+                                    <Select.Root
+                                        type="single"
+                                        value={value.toString()}
+                                        onValueChange={(selected) =>
+                                            calculator.updateFieldValue(
+                                                register,
+                                                item.field,
+                                                BigInt(selected),
+                                            )}
+                                    >
+                                        <Select.Trigger
+                                            class="min-w-0 flex-1 bg-background font-mono"
+                                        >
+                                            {member?.displayName ||
+                                                `Unknown (${calculator.formatNumericValue(value, item.field.width, "hex")})`}
+                                        </Select.Trigger>
+                                        <Select.Content class="bg-card text-card-foreground">
+                                            {#each item.field.enum.members as option (option.name)}
+                                                <Select.Item value={option.value}>
+                                                    {option.displayName}
+                                                </Select.Item>
+                                            {/each}
+                                        </Select.Content>
+                                    </Select.Root>
+                                {:else}
+                                    <Input
+                                        value={calculator.fieldEditorValue(register, item.field)}
+                                        class="min-w-0 flex-1 font-mono"
+                                        aria-invalid={Boolean(
+                                            calculator.fieldErrors[item.field.id],
                                         )}
-                                >
-                                    <Select.Trigger class="w-full bg-background font-mono">
-                                        {member?.displayName ||
-                                            `Unknown (${calculator.formatNumericValue(value, item.field.width, "hex")})`}
-                                    </Select.Trigger>
-                                    <Select.Content class="bg-card text-card-foreground">
-                                        {#each item.field.enum.members as option (option.name)}
-                                            <Select.Item value={option.value}>
-                                                {option.displayName}
-                                            </Select.Item>
-                                        {/each}
-                                    </Select.Content>
-                                </Select.Root>
-                            {:else}
-                                <Input
-                                    value={calculator.fieldEditorValue(register, item.field)}
-                                    class="font-mono"
-                                    aria-invalid={Boolean(calculator.fieldErrors[item.field.id])}
-                                    oninput={(event) =>
-                                        calculator.updateFieldDraft(
-                                            register,
-                                            item.field,
-                                            (event.currentTarget as HTMLInputElement).value,
-                                        )}
-                                />
-                            {/if}
-                            <p class="text-xs text-muted-foreground">
-                                {calculator.fieldResetLabel(item.field)}
-                            </p>
+                                        oninput={(event) =>
+                                            calculator.updateFieldDraft(
+                                                register,
+                                                item.field,
+                                                (event.currentTarget as HTMLInputElement).value,
+                                            )}
+                                    />
+                                {/if}
+                            </div>
                             {#if calculator.fieldErrors[item.field.id]}
                                 <p class="text-xs text-destructive">
                                     {calculator.fieldErrors[item.field.id]}
