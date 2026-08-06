@@ -80,8 +80,8 @@
     const documentExpandableIds = expandableIds(registerDocument.navigation);
     const addressExpandableIds = expandableIds(addressNavigation);
 
-    let selectedId = $state(registerDocument.registers[0]?.id || "");
-    let selectedFolderId = $state("");
+    let selectedId = $state("");
+    let selectedFolderId = $state(registerDocument.navigation.id);
     let expanded = $state<Set<string>>(new Set([registerDocument.navigation.id]));
     let navigationMode = $state<"document" | "address">("document");
     let query = $state("");
@@ -216,9 +216,9 @@
     function applyHash(): void {
         const target = parseDocumentHash(location.hash);
         if (target) void showTarget(target, false);
-        else if (registerDocument.registers[0])
+        else
             void showTarget(
-                { kind: "register", registerId: registerDocument.registers[0].id },
+                { kind: "folder", folderId: registerDocument.navigation.id },
                 false,
             );
     }
