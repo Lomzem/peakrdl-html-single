@@ -75,7 +75,7 @@
 
         <Collapsible.Content>
             <CardContent class="p-3">
-                <div class="overflow-hidden rounded-lg">
+                <div class="overflow-hidden rounded-lg border-y border-border/60">
                     {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
                         {#if item.kind === "gap"}
                             <div
@@ -89,14 +89,15 @@
                                 class="grid gap-2 border-b border-border/60 px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-start"
                             >
                                 <div class="min-w-0">
-                                    <div class="flex min-w-0 items-center gap-2">
+                                    <div class="flex min-w-0 items-baseline gap-2">
                                         <a
                                             href={documentHref({
                                                 kind: "register",
                                                 registerId: register.id,
                                                 fieldId: item.field.id,
                                             })}
-                                            class="min-w-0 truncate text-left text-sm font-medium hover:underline"
+                                            class="min-w-0 flex-1 truncate text-left text-sm font-medium hover:underline"
+                                            title={item.field.name}
                                             onclick={(event) =>
                                                 onNavigate(event, {
                                                     kind: "register",
@@ -109,9 +110,16 @@
                                         <code class="shrink-0 text-xs text-muted-foreground">
                                             {bitRange(item.field)}
                                         </code>
+                                        <span
+                                            class="hidden min-w-0 max-w-[45%] truncate font-mono text-xs text-muted-foreground sm:block"
+                                            title={calculator.fieldResetLabel(item.field)}
+                                        >
+                                            {calculator.fieldResetLabel(item.field)}
+                                        </span>
                                     </div>
                                     <p
-                                        class="mt-0.5 truncate font-mono text-xs text-muted-foreground"
+                                        class="mt-0.5 break-words font-mono text-xs text-muted-foreground sm:hidden"
+                                        title={calculator.fieldResetLabel(item.field)}
                                     >
                                         {calculator.fieldResetLabel(item.field)}
                                     </p>
@@ -139,6 +147,7 @@
                                             >
                                                 <Select.Trigger
                                                     class="min-w-0 flex-1 bg-background font-mono text-foreground"
+                                                    aria-label={`Value for ${item.field.name}`}
                                                 >
                                                     {member?.displayName ||
                                                         `Unknown (${calculator.formatNumericValue(value, item.field.width, "hex")})`}
@@ -158,6 +167,7 @@
                                                     item.field,
                                                 )}
                                                 class="min-w-0 flex-1 font-mono"
+                                                aria-label={`Value for ${item.field.name}`}
                                                 aria-invalid={Boolean(
                                                     calculator.fieldErrors[item.field.id],
                                                 )}
@@ -190,6 +200,7 @@
                         <Input
                             value={calculator.encodedDraft}
                             class="h-10 bg-background font-mono text-base font-medium text-primary shadow-xs"
+                            aria-label="Encoded register value"
                             aria-invalid={Boolean(calculator.encodedError)}
                             oninput={(event) =>
                                 calculator.updateEncodedValue(

@@ -46,7 +46,7 @@
         <CardHeader class="border-b border-border/60 bg-muted/25 p-3">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                    <h3 class="text-lg font-semibold tracking-tight">
+                    <h3 class="break-words text-lg font-semibold tracking-tight">
                         <a
                             href={documentHref({
                                 kind: "register",
@@ -64,21 +64,25 @@
                             {field.name}
                         </a>
                     </h3>
-                    <p class="mt-1 font-mono text-xs text-primary">
+                    <p class="mt-1 break-all font-mono text-xs text-primary">
                         {bitRange(field)} · {field.identifier}
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-1.5">
-                    <Badge variant="secondary"
-                        >{field.width} bit{field.width === 1 ? "" : "s"}</Badge
-                    >
-                    <Badge variant="outline">SW {accessLabel(field.softwareAccess)}</Badge>
-                    <Badge variant="outline">HW {accessLabel(field.hardwareAccess)}</Badge>
-                    {#if field.reset}
-                        <Badge variant="outline"
-                            >Reset {field.reset.enumMember || field.reset.hex}</Badge
+                <div class="flex min-w-0 max-w-full items-start gap-1.5 sm:justify-end">
+                    <div class="flex min-w-0 flex-wrap gap-1.5 sm:justify-end">
+                        <Badge variant="secondary"
+                            >{field.width} bit{field.width === 1 ? "" : "s"}</Badge
                         >
-                    {/if}
+                        <Badge variant="outline">SW {accessLabel(field.softwareAccess)}</Badge>
+                        <Badge variant="outline">HW {accessLabel(field.hardwareAccess)}</Badge>
+                        {#if field.reset}
+                            <Badge
+                                variant="outline"
+                                class="h-auto min-w-0 max-w-full break-all whitespace-normal"
+                                >Reset {field.reset.enumMember || field.reset.hex}</Badge
+                            >
+                        {/if}
+                    </div>
                     <Collapsible.Trigger>
                         {#snippet child({ props })}
                             <Button

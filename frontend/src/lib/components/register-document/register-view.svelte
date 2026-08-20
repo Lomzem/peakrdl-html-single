@@ -67,14 +67,14 @@
             {#if register.absoluteAddressHex}
                 <button
                     type="button"
-                    class="group rounded-full outline-none transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring"
+                    class="group rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Copy address ${register.absoluteAddressHex}`}
                     title={copiedAddress === register.absoluteAddressHex
                         ? "Copied"
                         : "Copy address"}
                     onclick={() => copyAddress(register.absoluteAddressHex || "")}
                 >
-                    <Badge class="cursor-copy font-mono text-sm">
+                    <Badge class="cursor-copy font-mono text-sm group-hover:bg-primary/80">
                         {#if copiedAddress === register.absoluteAddressHex}
                             <span class="select-none">Copied</span>
                         {:else}

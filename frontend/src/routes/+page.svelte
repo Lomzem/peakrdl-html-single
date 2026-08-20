@@ -279,11 +279,11 @@
 </svelte:head>
 
 <div
-    class="min-h-screen bg-background md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]"
+    class="h-screen overflow-hidden bg-background md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]"
     style={`--sidebar-width: ${sidebarWidth}px`}
 >
     <aside
-        class="print-hidden sticky top-0 hidden h-screen border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:block"
+        class="print-hidden relative hidden h-full min-h-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:block"
     >
         <NavigationPanel
             title={registerDocument.title}
@@ -309,8 +309,8 @@
         ></button>
     </aside>
 
-    <div class="min-w-0">
-        <header class="print-hidden sticky top-0 z-30 border-b bg-background px-3 py-2 md:px-6">
+    <div class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+        <header class="print-hidden shrink-0 border-b bg-background px-3 py-2 md:px-6">
             <div class="mx-auto flex max-w-6xl items-center gap-2">
                 <Sheet.Root bind:open={mobileNavigationOpen}>
                     <Sheet.Trigger>
@@ -368,7 +368,7 @@
         </header>
 
         <main
-            class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-4 md:px-8 md:py-5"
+            class="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-5"
             onscroll={handleMainScroll}
         >
             <div class="mx-auto max-w-6xl">
