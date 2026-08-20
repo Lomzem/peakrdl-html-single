@@ -89,6 +89,17 @@ describe("search records", () => {
     expect(service.search("ACTIVE")[0]?.kind).toBe("enum-member");
   });
 
+  test("keeps the complete structured documentation group path", () => {
+    expect(records.find((record) => record.kind === "register")?.groupPath).toEqual([
+      "Configuration",
+      "General",
+    ]);
+    expect(records.find((record) => record.kind === "field")?.groupPath).toEqual([
+      "Configuration",
+      "General",
+    ]);
+  });
+
   test("preserves exact folder, enum, and enum-member link targets", () => {
     expect(records.find((record) => record.kind === "structure")?.folderId).toBe("addrmap:sample");
     expect(records.find((record) => record.kind === "enum")?.enumName).toBe("mode_e");

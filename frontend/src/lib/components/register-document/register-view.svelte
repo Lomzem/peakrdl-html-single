@@ -17,12 +17,23 @@
     interface Props {
         register: Register;
         breadcrumbs: ReadonlyArray<NavigationNode>;
+        selectedFieldId: string;
         showReservedGaps: boolean;
         calculator: RegisterCalculatorState;
         onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let { register, breadcrumbs, showReservedGaps, calculator, onNavigate }: Props = $props();
+    let {
+        register,
+        breadcrumbs,
+        selectedFieldId,
+        showReservedGaps,
+        calculator,
+        onNavigate,
+    }: Props = $props();
+    let selectedField = $derived(
+        register.fields.find((candidate) => candidate.id === selectedFieldId),
+    );
     let copiedAddress = $state("");
 
     async function copyAddress(address: string): Promise<void> {
@@ -46,8 +57,8 @@
 </script>
 
 <section aria-labelledby="register-title">
-    {#if breadcrumbs.length}
-        <div class="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+    <nav aria-label="Breadcrumb" class="mb-3">
+        <div class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as group, index (group.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
@@ -59,8 +70,27 @@
                     {group.label}
                 </a>
             {/each}
+            {#if breadcrumbs.length}<ChevronRightIcon class="size-3" />{/if}
+            {#if selectedField}
+                <a
+                    href={documentHref({ kind: "register", registerId: register.id })}
+                    class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onclick={(event) =>
+                        onNavigate(event, { kind: "register", registerId: register.id })}
+                >
+                    {register.name}
+                </a>
+                <ChevronRightIcon class="size-3" />
+                <span class="px-1 py-0.5 text-foreground" aria-current="page">
+                    {selectedField.name}
+                </span>
+            {:else}
+                <span class="px-1 py-0.5 text-foreground" aria-current="page">
+                    {register.name}
+                </span>
+            {/if}
         </div>
-    {/if}
+    </nav>
 
     <div class="min-w-0">
         <div class="mb-1.5 flex flex-wrap items-center gap-2">

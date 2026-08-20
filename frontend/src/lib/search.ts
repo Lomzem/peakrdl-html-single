@@ -5,7 +5,7 @@ import type { NavigationNode, Register, RegisterDocument, RegisterField } from "
 
 export type SearchKind = "group" | "structure" | "register" | "field" | "enum" | "enum-member";
 
-export interface SearchRecord extends Record<string, string> {
+export interface SearchRecord extends Record<string, string | string[]> {
   id: string;
   kind: SearchKind;
   label: string;
@@ -22,6 +22,7 @@ export interface SearchRecord extends Record<string, string> {
   enum: string;
   description: string;
   text: string;
+  groupPath: string[];
 }
 
 export class SearchIndexError extends Data.TaggedError("SearchIndexError")<{
@@ -30,7 +31,12 @@ export class SearchIndexError extends Data.TaggedError("SearchIndexError")<{
 
 const fields = ["address", "identifier", "group", "field", "enum", "description", "text"];
 
-function navigationRecords(node: NavigationNode, records: SearchRecord[]): void {
+function navigationRecords(
+  node: NavigationNode,
+  records: SearchRecord[],
+  groupPath: ReadonlyArray<string> = [],
+): void {
+  const currentGroupPath = node.kind === "doc-group" ? [...groupPath, node.label] : groupPath;
   if (node.kind !== "register") {
     records.push({
       id: `navigation:${node.id}`,
@@ -49,9 +55,10 @@ function navigationRecords(node: NavigationNode, records: SearchRecord[]): void 
       enum: "",
       description: "",
       text: `${node.label} ${node.identifier}`,
+      groupPath: [...currentGroupPath],
     });
   }
-  for (const child of node.children) navigationRecords(child, records);
+  for (const child of node.children) navigationRecords(child, records, currentGroupPath);
 }
 
 function fieldRecords(register: Register, field: RegisterField): SearchRecord[] {
@@ -67,6 +74,7 @@ function fieldRecords(register: Register, field: RegisterField): SearchRecord[] 
     field: `${field.name} ${field.identifier}`,
     description: field.description,
     context: `${register.name} · ${register.absoluteAddressHex || "No address"}`,
+    groupPath: [...register.groupPath],
   };
   const records: SearchRecord[] = [
     {
@@ -128,6 +136,7 @@ export function createSearchRecords(document: RegisterDocument): SearchRecord[] 
       enum: register.fields.map((field) => field.enum?.name || "").join(" "),
       description: register.description,
       text: `${register.name} ${register.identifier} ${register.description}`,
+      groupPath: [...register.groupPath],
     });
     for (const field of register.fields) records.push(...fieldRecords(register, field));
   }

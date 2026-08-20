@@ -79,10 +79,10 @@
                     {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
                         {#if item.kind === "gap"}
                             <div
-                                class="flex items-center justify-between border-b border-dashed border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground last:border-b-0"
+                                class="flex flex-wrap items-baseline gap-2 border-b border-dashed border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground last:border-b-0"
                             >
                                 <span>Reserved</span>
-                                <code>{bitGapLabel(item.low, item.high)}</code>
+                                <code class="text-xs">{bitGapLabel(item.low, item.high)}</code>
                             </div>
                         {:else}
                             <div
@@ -96,7 +96,7 @@
                                                 registerId: register.id,
                                                 fieldId: item.field.id,
                                             })}
-                                            class="min-w-0 flex-1 truncate text-left text-sm font-medium hover:underline"
+                                            class="min-w-0 truncate text-left text-sm font-medium hover:underline"
                                             title={item.field.name}
                                             onclick={(event) =>
                                                 onNavigate(event, {
@@ -124,7 +124,7 @@
                                         {calculator.fieldResetLabel(item.field)}
                                     </p>
                                 </div>
-                                <div class="grid gap-1">
+                                <div class="grid w-full justify-self-end gap-1">
                                     <div class="flex min-w-0 items-center gap-2">
                                         {#if calculator.valueMode === "enum" && item.field.enum}
                                             {@const value = calculator.fieldValue(

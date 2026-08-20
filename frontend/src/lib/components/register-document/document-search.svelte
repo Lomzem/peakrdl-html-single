@@ -1,5 +1,6 @@
 <script lang="ts">
     /* eslint-disable svelte/no-navigation-without-resolve -- Fragment links also run in the standalone build. */
+    import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
     import SearchIcon from "@lucide/svelte/icons/search";
     import { createHotkey } from "@tanstack/svelte-hotkeys";
 
@@ -95,13 +96,16 @@
 </script>
 
 <div class="relative min-w-0 flex-1" onfocusout={handleFocusOut}>
+    <Kbd.Root class="absolute left-2 top-1/2 hidden -translate-y-1/2 sm:inline-flex"
+        >Ctrl K</Kbd.Root
+    >
     <SearchIcon
-        class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground sm:left-[4.25rem]"
     />
     <Input
         bind:ref={searchInput}
         bind:value={query}
-        class="h-9 bg-card pl-9 pr-16 font-mono text-sm text-card-foreground"
+        class="h-9 bg-card pl-9 font-mono text-sm text-card-foreground sm:pl-[5.75rem]"
         placeholder="Search by address, register, field, or enum"
         aria-label="Search registers"
         aria-keyshortcuts="Control+K /"
@@ -116,7 +120,6 @@
         oninput={() => (activeSearchIndex = -1)}
         onkeydown={handleKeydown}
     />
-    <Kbd.Root class="absolute right-2 top-1/2 -translate-y-1/2">Ctrl K</Kbd.Root>
     {#if query.trim() && searchFocused}
         <div
             id="search-results"
@@ -147,12 +150,28 @@
                                 {/each}
                             </span>
                             <span
-                                class="mt-0.5 block truncate font-mono text-xs leading-4 text-muted-foreground"
+                                class="mt-0.5 block break-words font-mono text-xs leading-4 text-muted-foreground"
                             >
                                 {#each matchedTextParts(result.context, query) as part, partIndex (partIndex)}
                                     <span class:text-primary={part.matched}>{part.text}</span>
                                 {/each}
                             </span>
+                            {#if result.groupPath.length}
+                                <span
+                                    class="mt-1 flex min-w-0 flex-wrap items-center gap-x-1 text-xs leading-4 text-muted-foreground"
+                                    aria-label={`Documentation group: ${result.groupPath.join(", ")}`}
+                                >
+                                    {#each result.groupPath as segment, segmentIndex (segmentIndex)}
+                                        {#if segmentIndex}
+                                            <ChevronRightIcon
+                                                class="size-3 shrink-0"
+                                                aria-hidden="true"
+                                            />
+                                        {/if}
+                                        <span class="min-w-0 break-words">{segment}</span>
+                                    {/each}
+                                </span>
+                            {/if}
                         </span>
                     </a>
                 {/each}

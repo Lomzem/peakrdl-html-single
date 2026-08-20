@@ -37,8 +37,8 @@
 {/snippet}
 
 <section aria-labelledby="folder-title">
-    {#if breadcrumbs.length}
-        <div class="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+    <nav aria-label="Breadcrumb" class="mb-3">
+        <div class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as ancestor, index (ancestor.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
@@ -51,8 +51,10 @@
                     {ancestor.label}
                 </a>
             {/each}
+            {#if breadcrumbs.length}<ChevronRightIcon class="size-3" />{/if}
+            <span class="px-1 py-0.5 text-foreground" aria-current="page">{folder.label}</span>
         </div>
-    {/if}
+    </nav>
 
     {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
     <h2 id="folder-title" class="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
