@@ -15,7 +15,9 @@
 </script>
 
 <section aria-label="Bit layout">
-    <div class="overflow-x-auto rounded-lg border bg-card p-2 text-card-foreground">
+    <div
+        class="overflow-x-auto rounded-lg border border-border/60 bg-card p-2 text-card-foreground"
+    >
         <div
             class="grid min-w-[42rem] gap-px overflow-hidden rounded-md bg-border"
             style={`grid-template-columns: repeat(${Math.max(register.width, 1)}, minmax(0, 1fr))`}
@@ -28,7 +30,7 @@
                             registerId: register.id,
                             fieldId: item.field.id,
                         })}
-                        class={`row-start-1 flex min-h-16 flex-col items-center justify-center gap-1 overflow-hidden border-y border-border px-2 text-center text-xs leading-tight transition-colors hover:bg-accent hover:text-accent-foreground ${index % 2 ? "bg-muted/70 text-foreground" : "bg-secondary text-secondary-foreground"}`}
+                        class={`row-start-1 flex min-h-16 flex-col items-center justify-center gap-1 overflow-hidden px-2 text-center text-xs leading-tight transition-colors hover:bg-accent hover:text-accent-foreground ${index % 2 ? "bg-muted/70 text-foreground" : "bg-secondary text-secondary-foreground"}`}
                         style={`grid-column: ${register.width - item.field.high} / ${register.width - item.field.low + 1}`}
                         title={`${item.field.name} ${bitRange(item.field)}`}
                         onclick={(event) =>
@@ -45,7 +47,7 @@
                     </a>
                 {:else}
                     <div
-                        class="row-start-1 grid min-h-16 place-content-center gap-1 overflow-hidden border-y border-dashed border-border bg-muted/40 px-2 text-center text-xs leading-tight text-foreground"
+                        class="row-start-1 grid min-h-16 place-content-center gap-1 overflow-hidden border-x border-dashed border-border bg-muted/40 px-2 text-center text-xs leading-tight text-foreground"
                         style={`grid-column: ${register.width - item.high} / ${register.width - item.low + 1}`}
                     >
                         <span class="font-medium">Reserved</span>

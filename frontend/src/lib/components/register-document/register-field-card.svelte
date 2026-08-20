@@ -43,7 +43,7 @@
 
 <Collapsible.Root bind:open>
     <Card id={fieldDomId(field.id)} class="scroll-mt-20 gap-0 overflow-hidden py-0">
-        <CardHeader class="border-b bg-muted/25 p-3">
+        <CardHeader class="border-b border-border/60 bg-muted/25 p-3">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
                     <h3 class="text-lg font-semibold tracking-tight">
@@ -109,9 +109,9 @@
                 {#if field.enum}
                     <div
                         id={enumDomId(field.id, field.enum.name)}
-                        class="mt-3 scroll-mt-20 overflow-hidden rounded-lg border"
+                        class="mt-3 scroll-mt-20 overflow-hidden rounded-lg"
                     >
-                        <div class="border-b bg-muted/40 px-3 py-2">
+                        <div class="border-b border-border/60 bg-muted/40 px-3 py-2">
                             <span class="text-sm font-medium">Enum </span>
                             <a
                                 href={documentHref({
@@ -134,7 +134,7 @@
                         </div>
                         <Table>
                             <TableHeader>
-                                <TableRow>
+                                <TableRow class="border-border/60">
                                     <TableHead class="w-28">Value</TableHead>
                                     <TableHead class="w-48">Member</TableHead>
                                     <TableHead>Description</TableHead>
@@ -144,7 +144,7 @@
                                 {#each field.enum.members as member (member.name)}
                                     <TableRow
                                         id={enumMemberDomId(field.id, field.enum.name, member.name)}
-                                        class="scroll-mt-20"
+                                        class="scroll-mt-20 border-border/60"
                                     >
                                         <TableCell class="font-mono">{member.hex}</TableCell>
                                         <TableCell>

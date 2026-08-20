@@ -4,7 +4,6 @@
     import FolderTreeIcon from "@lucide/svelte/icons/folder-tree";
 
     import { Badge } from "$lib/components/ui/badge";
-    import { Separator } from "$lib/components/ui/separator";
     import { documentHref, type DocumentTarget } from "$lib/document-links";
     import type { NavigationNode, Register } from "$lib/domain";
     import { renderMarkdown } from "$lib/markdown";
@@ -108,16 +107,15 @@
         </div>
     {/if}
 
-    <Separator class="my-4" />
-    <RegisterBitLayout {register} {showReservedGaps} {onNavigate} />
+    <div class="mt-4">
+        <RegisterBitLayout {register} {showReservedGaps} {onNavigate} />
+    </div>
 
     <div class="mt-4">
         <RegisterCalculator {register} {showReservedGaps} {calculator} {onNavigate} />
     </div>
 
-    <Separator class="my-4" />
-
-    <div class="space-y-3">
+    <div class="mt-4 space-y-3">
         {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
             {#if item.kind === "field"}
                 <RegisterFieldCard field={item.field} registerId={register.id} {onNavigate} />
