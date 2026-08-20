@@ -38,7 +38,7 @@
 
 <section aria-labelledby="folder-title">
     {#if breadcrumbs.length}
-        <div class="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <div class="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as ancestor, index (ancestor.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
@@ -55,7 +55,7 @@
     {/if}
 
     {#if folder.address}<Badge variant="outline" class="font-mono">{folder.address}</Badge>{/if}
-    <h2 id="folder-title" class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+    <h2 id="folder-title" class="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
         <a
             href={documentHref({ kind: "folder", folderId: folder.id })}
             class="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -64,14 +64,14 @@
             {folder.label}
         </a>
     </h2>
-    <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
+    <p class="mt-1.5 break-all font-mono text-xs text-muted-foreground">
         {folder.identifier}
     </p>
 
-    <Separator class="my-8" />
+    <Separator class="my-5" />
 
     {#if items.length}
-        <div class="grid gap-3">
+        <div class="grid gap-2">
             {#each items as item (item.kind === "node" ? item.node.id : `gap:${item.low}:${item.high}`)}
                 {#if item.kind === "node"}
                     {@const target =
@@ -83,11 +83,11 @@
                             : ({ kind: "folder", folderId: item.node.id } satisfies DocumentTarget)}
                     <a
                         href={documentHref(target)}
-                        class="group flex min-w-0 items-center gap-3 rounded-lg border bg-card p-4 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        class="group flex min-w-0 items-center gap-2.5 rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onclick={(event) => onNavigate(event, target)}
                     >
                         <span
-                            class="grid size-9 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60"
+                            class="grid size-8 shrink-0 place-items-center rounded-md bg-muted group-hover:bg-background/60"
                         >
                             {@render kindIcon(item.node)}
                         </span>
@@ -105,7 +105,7 @@
                     </a>
                 {:else}
                     <div
-                        class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"
+                        class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-3 py-2 text-sm text-muted-foreground"
                     >
                         <span>Reserved</span>
                         <code>{addressRangeLabel(item.low, item.high)}</code>

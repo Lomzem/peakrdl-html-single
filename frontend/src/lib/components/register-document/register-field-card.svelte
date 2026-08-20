@@ -43,10 +43,10 @@
 
 <Collapsible.Root bind:open>
     <Card id={fieldDomId(field.id)} class="scroll-mt-20 gap-0 overflow-hidden py-0">
-        <CardHeader class="border-b bg-muted/25 p-4">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <CardHeader class="border-b bg-muted/25 p-3">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                    <h3 class="text-xl font-semibold tracking-tight">
+                    <h3 class="text-lg font-semibold tracking-tight">
                         <a
                             href={documentHref({
                                 kind: "register",
@@ -68,7 +68,7 @@
                         {bitRange(field)} · {field.identifier}
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-1.5">
                     <Badge variant="secondary"
                         >{field.width} bit{field.width === 1 ? "" : "s"}</Badge
                     >
@@ -97,7 +97,7 @@
             </div>
         </CardHeader>
         <Collapsible.Content>
-            <CardContent class="p-4">
+            <CardContent class="p-3">
                 {#if field.description}
                     <div class="markdown text-sm">
                         {@html renderMarkdown(field.description)}
@@ -109,9 +109,9 @@
                 {#if field.enum}
                     <div
                         id={enumDomId(field.id, field.enum.name)}
-                        class="mt-4 scroll-mt-20 overflow-hidden rounded-lg border"
+                        class="mt-3 scroll-mt-20 overflow-hidden rounded-lg border"
                     >
-                        <div class="border-b bg-muted/40 px-4 py-2.5">
+                        <div class="border-b bg-muted/40 px-3 py-2">
                             <span class="text-sm font-medium">Enum </span>
                             <a
                                 href={documentHref({

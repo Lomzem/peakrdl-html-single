@@ -310,9 +310,7 @@
     </aside>
 
     <div class="min-w-0">
-        <header
-            class="print-hidden sticky top-0 z-30 border-b bg-background/92 px-3 py-2 backdrop-blur md:px-6"
-        >
+        <header class="print-hidden sticky top-0 z-30 border-b bg-background px-3 py-2 md:px-6">
             <div class="mx-auto flex max-w-6xl items-center gap-2">
                 <Sheet.Root bind:open={mobileNavigationOpen}>
                     <Sheet.Trigger>
@@ -370,7 +368,7 @@
         </header>
 
         <main
-            class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-5 md:px-8 md:py-6"
+            class="h-[calc(100vh-57px)] overflow-y-auto px-4 py-4 md:px-8 md:py-5"
             onscroll={handleMainScroll}
         >
             <div class="mx-auto max-w-6xl">

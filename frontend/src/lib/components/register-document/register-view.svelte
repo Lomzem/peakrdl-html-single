@@ -48,7 +48,7 @@
 
 <section aria-labelledby="register-title">
     {#if breadcrumbs.length}
-        <div class="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <div class="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <FolderTreeIcon class="mr-1 size-3.5" />
             {#each breadcrumbs as group, index (group.id)}
                 {#if index}<ChevronRightIcon class="size-3" />{/if}
@@ -64,7 +64,7 @@
     {/if}
 
     <div class="min-w-0">
-        <div class="mb-2 flex flex-wrap items-center gap-2">
+        <div class="mb-1.5 flex flex-wrap items-center gap-2">
             {#if register.absoluteAddressHex}
                 <button
                     type="button"
@@ -97,33 +97,33 @@
                 {register.name}
             </a>
         </h2>
-        <p class="mt-2 break-all font-mono text-xs text-muted-foreground">
+        <p class="mt-1.5 break-all font-mono text-xs text-muted-foreground">
             {register.identifier}
         </p>
     </div>
 
     {#if register.description}
-        <div class="markdown mt-4 max-w-4xl text-sm md:text-base">
+        <div class="markdown mt-3 max-w-4xl text-sm md:text-base">
             {@html renderMarkdown(register.description)}
         </div>
     {/if}
 
-    <Separator class="my-5" />
+    <Separator class="my-4" />
     <RegisterBitLayout {register} {showReservedGaps} {onNavigate} />
 
-    <div class="mt-5">
+    <div class="mt-4">
         <RegisterCalculator {register} {showReservedGaps} {calculator} {onNavigate} />
     </div>
 
-    <Separator class="my-5" />
+    <Separator class="my-4" />
 
-    <div class="space-y-4">
+    <div class="space-y-3">
         {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `gap:${item.low}:${item.high}`)}
             {#if item.kind === "field"}
                 <RegisterFieldCard field={item.field} registerId={register.id} {onNavigate} />
             {:else}
                 <div
-                    class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-4 py-3 text-sm text-muted-foreground"
+                    class="flex items-center justify-between rounded-lg border border-dashed bg-muted/25 px-3 py-2 text-sm text-muted-foreground"
                 >
                     <span class="font-medium">Reserved</span>
                     <code>{bitGapLabel(item.low, item.high)}</code>

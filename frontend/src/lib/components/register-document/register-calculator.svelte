@@ -29,9 +29,9 @@
 
 <Collapsible.Root bind:open>
     <Card class="gap-0 overflow-hidden py-0">
-        <CardHeader class="border-b bg-muted/25 p-4">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h3 class="flex items-center gap-2 text-xl font-semibold tracking-tight">
+        <CardHeader class="border-b bg-muted/25 p-3">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 class="flex items-center gap-2 text-lg font-semibold tracking-tight">
                     <CalculatorIcon class="size-5 text-primary" />
                     Register Calculator
                 </h3>
@@ -74,19 +74,19 @@
         </CardHeader>
 
         <Collapsible.Content>
-            <CardContent class="p-4">
+            <CardContent class="p-3">
                 <div class="overflow-hidden rounded-lg border">
                     {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
                         {#if item.kind === "gap"}
                             <div
-                                class="flex items-center justify-between border-b border-dashed bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground last:border-b-0"
+                                class="flex items-center justify-between border-b border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground last:border-b-0"
                             >
                                 <span>Reserved</span>
                                 <code>{bitGapLabel(item.low, item.high)}</code>
                             </div>
                         {:else}
                             <div
-                                class="grid gap-3 border-b px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-start"
+                                class="grid gap-2 border-b px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-start"
                             >
                                 <div class="min-w-0">
                                     <div class="flex min-w-0 items-center gap-2">
@@ -183,7 +183,7 @@
                 </div>
 
                 <div
-                    class="mt-4 grid gap-3 rounded-lg border p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+                    class="mt-3 grid gap-2 rounded-lg border p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
                 >
                     <label class="grid gap-1.5">
                         <span class="text-sm font-semibold">Encoded register value</span>
