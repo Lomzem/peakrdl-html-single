@@ -57,14 +57,14 @@ export class RegisterCalculatorState {
     );
   }
 
-  fieldResetLabel(field: RegisterField): string {
-    if (!field.reset) return "No reset";
+  fieldResetValue(field: RegisterField): string {
+    if (!field.reset) return "None";
     const value = BigInt(field.reset.value);
     if (this.valueMode === "enum") {
       const member = this.matchingEnumMember(field, value);
-      if (member) return `Reset: ${member.displayName}`;
+      if (member) return member.displayName;
     }
-    return `Reset: ${this.formatNumericValue(value, field.width, this.numericMode())}`;
+    return this.formatNumericValue(value, field.width, this.numericMode());
   }
 
   selectRegister(register: Register): void {
@@ -121,6 +121,15 @@ export class RegisterCalculatorState {
   reset(register: Register): void {
     this.setRegisterValue(register, resetRegisterValue(register));
     this.selectRegister(register);
+  }
+
+  canReset(register: Register): boolean {
+    return (
+      this.registerValue(register) !== resetRegisterValue(register) ||
+      this.encodedError !== "" ||
+      Object.keys(this.fieldDrafts).length > 0 ||
+      Object.keys(this.fieldErrors).length > 0
+    );
   }
 
   async copyEncodedValue(register: Register): Promise<void> {

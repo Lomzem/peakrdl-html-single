@@ -44,16 +44,21 @@
 <Collapsible.Root bind:open>
     <Card id={fieldDomId(field.id)} class="scroll-mt-20 gap-0 overflow-hidden py-0">
         <CardHeader class="border-b border-border/60 bg-muted/25 p-3">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div class="min-w-0">
-                    <h3 class="break-words text-lg font-semibold tracking-tight">
+            <div
+                class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 overflow-hidden"
+            >
+                <div class="flex min-w-0 items-baseline gap-1.5 overflow-hidden">
+                    <h3
+                        class="min-w-12 max-w-[50%] shrink truncate text-lg font-semibold tracking-tight"
+                    >
                         <a
                             href={documentHref({
                                 kind: "register",
                                 registerId,
                                 fieldId: field.id,
                             })}
-                            class="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            class="block truncate rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            title={field.name}
                             onclick={(event) =>
                                 onNavigate(event, {
                                     kind: "register",
@@ -64,25 +69,40 @@
                             {field.name}
                         </a>
                     </h3>
-                    <p class="mt-1 break-all font-mono text-xs text-primary">
-                        {bitRange(field)} · {field.identifier}
-                    </p>
+                    <code class="shrink-0 text-xs text-primary" title={bitRange(field)}>
+                        {bitRange(field)}
+                    </code>
+                    <code
+                        class="min-w-6 flex-1 truncate text-xs text-muted-foreground"
+                        title={field.identifier}
+                    >
+                        {field.identifier}
+                    </code>
                 </div>
-                <div class="flex min-w-0 max-w-full items-start gap-1.5 sm:justify-end">
-                    <div class="flex min-w-0 flex-wrap gap-1.5 sm:justify-end">
-                        <Badge variant="secondary"
-                            >{field.width} bit{field.width === 1 ? "" : "s"}</Badge
+                <div class="flex shrink-0 items-center gap-1.5">
+                    <Badge
+                        variant="outline"
+                        class="h-7 rounded-[min(var(--radius-md),12px)] px-2.5"
+                    >
+                        SW {accessLabel(field.softwareAccess)}
+                    </Badge>
+                    <Badge
+                        variant="outline"
+                        class="h-7 rounded-[min(var(--radius-md),12px)] px-2.5"
+                    >
+                        HW {accessLabel(field.hardwareAccess)}
+                    </Badge>
+                    {#if field.reset}
+                        <Badge
+                            variant="outline"
+                            class="h-7 min-w-0 max-w-16 rounded-[min(var(--radius-md),12px)] px-2.5 sm:max-w-32 lg:max-w-48"
+                            title={`Reset ${field.reset.enumMember || field.reset.hex}`}
                         >
-                        <Badge variant="outline">SW {accessLabel(field.softwareAccess)}</Badge>
-                        <Badge variant="outline">HW {accessLabel(field.hardwareAccess)}</Badge>
-                        {#if field.reset}
-                            <Badge
-                                variant="outline"
-                                class="h-auto min-w-0 max-w-full break-all whitespace-normal"
-                                >Reset {field.reset.enumMember || field.reset.hex}</Badge
+                            <span class="truncate"
+                                >Reset {field.reset.enumMember || field.reset.hex}</span
                             >
-                        {/if}
-                    </div>
+                        </Badge>
+                    {/if}
                     <Collapsible.Trigger>
                         {#snippet child({ props })}
                             <Button

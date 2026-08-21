@@ -4,9 +4,11 @@
     import CheckIcon from "@lucide/svelte/icons/check";
     import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
     import ChevronUpIcon from "@lucide/svelte/icons/chevron-up";
+    import CopyIcon from "@lucide/svelte/icons/copy";
+    import RotateCcwIcon from "@lucide/svelte/icons/rotate-ccw";
 
     import { Button } from "$lib/components/ui/button";
-    import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
+    import { Card, CardContent, CardFooter, CardHeader } from "$lib/components/ui/card";
     import * as Collapsible from "$lib/components/ui/collapsible";
     import { Input } from "$lib/components/ui/input";
     import * as Select from "$lib/components/ui/select";
@@ -29,22 +31,22 @@
 
 <Collapsible.Root bind:open>
     <Card class="gap-0 overflow-hidden py-0">
-        <CardHeader class="border-b border-border/60 bg-muted/25 p-3">
+        <CardHeader class="p-3 pb-2">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="flex items-center gap-2 text-lg font-semibold tracking-tight">
                     <CalculatorIcon class="size-5 text-primary" />
                     Register Calculator
                 </h3>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex min-w-0 flex-wrap items-center gap-1">
                     <div
-                        class="flex rounded-lg border bg-background p-0.5 text-foreground"
+                        class="flex min-w-0 items-center text-foreground"
                         aria-label="Value display mode"
                     >
                         {#each ["binary", "decimal", "hex", "enum"] as mode (mode)}
                             <Button
                                 variant={calculator.valueMode === mode ? "secondary" : "ghost"}
                                 size="sm"
-                                class="capitalize"
+                                class="px-2 capitalize"
                                 aria-pressed={calculator.valueMode === mode}
                                 onclick={() => calculator.setValueMode(mode as ValueMode, register)}
                             >
@@ -52,8 +54,15 @@
                             </Button>
                         {/each}
                     </div>
-                    <Button variant="outline" size="sm" onclick={() => calculator.reset(register)}>
-                        Reset
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="border-border/60 bg-muted/40 shadow-xs hover:bg-muted disabled:bg-muted/20 disabled:shadow-none dark:bg-input/20 dark:hover:bg-input/40"
+                        disabled={!calculator.canReset(register)}
+                        onclick={() => calculator.reset(register)}
+                    >
+                        <RotateCcwIcon aria-hidden="true" />
+                        Reset values
                     </Button>
                     <Collapsible.Trigger>
                         {#snippet child({ props })}
@@ -74,21 +83,23 @@
         </CardHeader>
 
         <Collapsible.Content>
-            <CardContent class="p-3">
-                <div class="overflow-hidden rounded-lg border-y border-border/60">
+            <CardContent class="px-3 pt-1 pb-3">
+                <div class="min-w-0">
                     {#each bitLayoutItems(register, showReservedGaps) as item (item.kind === "field" ? item.field.id : `editor-gap:${item.low}:${item.high}`)}
                         {#if item.kind === "gap"}
                             <div
-                                class="flex flex-wrap items-baseline gap-2 border-b border-dashed border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground last:border-b-0"
+                                class="flex min-w-0 flex-wrap items-baseline gap-2 border-t border-border/40 bg-muted/30 px-3 py-2 text-sm text-muted-foreground first:border-t-0"
                             >
-                                <span>Reserved</span>
-                                <code class="text-xs">{bitGapLabel(item.low, item.high)}</code>
+                                <span class="font-medium">Reserved</span>
+                                <code class="text-xs text-muted-foreground/80"
+                                    >{bitGapLabel(item.low, item.high)}</code
+                                >
                             </div>
                         {:else}
                             <div
-                                class="grid gap-2 border-b border-border/60 px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,16rem)] sm:items-start"
+                                class="grid min-w-0 gap-2 border-t border-border/40 px-3 py-2 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-center"
                             >
-                                <div class="min-w-0">
+                                <div class="min-w-0 space-y-0.5">
                                     <div class="flex min-w-0 items-baseline gap-2">
                                         <a
                                             href={documentHref({
@@ -110,19 +121,18 @@
                                         <code class="shrink-0 text-xs text-muted-foreground">
                                             {bitRange(item.field)}
                                         </code>
-                                        <span
-                                            class="hidden min-w-0 max-w-[45%] truncate font-mono text-xs text-muted-foreground sm:block"
-                                            title={calculator.fieldResetLabel(item.field)}
-                                        >
-                                            {calculator.fieldResetLabel(item.field)}
-                                        </span>
                                     </div>
-                                    <p
-                                        class="mt-0.5 break-words font-mono text-xs text-muted-foreground sm:hidden"
-                                        title={calculator.fieldResetLabel(item.field)}
+                                    <div
+                                        class="flex min-w-0 items-baseline gap-1.5 text-[0.6875rem] text-muted-foreground/80"
                                     >
-                                        {calculator.fieldResetLabel(item.field)}
-                                    </p>
+                                        <span class="shrink-0 font-normal">Reset:</span>
+                                        <code
+                                            class="min-w-0 truncate text-[0.6875rem] font-normal"
+                                            title={calculator.fieldResetValue(item.field)}
+                                        >
+                                            {calculator.fieldResetValue(item.field)}
+                                        </code>
+                                    </div>
                                 </div>
                                 <div class="grid w-full justify-self-end gap-1">
                                     <div class="flex min-w-0 items-center gap-2">
@@ -191,15 +201,20 @@
                         {/if}
                     {/each}
                 </div>
+            </CardContent>
 
-                <div
-                    class="mt-3 grid gap-2 border-t border-border/60 pt-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
-                >
-                    <label class="grid gap-1.5">
-                        <span class="text-sm font-semibold">Encoded register value</span>
+            <CardFooter class="block border-border/50 bg-muted/30 p-3">
+                <div class="grid gap-1.5">
+                    <label
+                        for="encoded-register-value"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Encoded register value</label
+                    >
+                    <div class="relative min-w-0">
                         <Input
+                            id="encoded-register-value"
                             value={calculator.encodedDraft}
-                            class="h-10 bg-background font-mono text-base font-medium text-primary shadow-xs"
+                            class="h-10 bg-background pr-20 font-mono text-base font-medium text-primary shadow-xs"
                             aria-label="Encoded register value"
                             aria-invalid={Boolean(calculator.encodedError)}
                             oninput={(event) =>
@@ -208,24 +223,27 @@
                                     (event.currentTarget as HTMLInputElement).value,
                                 )}
                         />
-                    </label>
-                    <Button
-                        variant="outline"
-                        class="h-10 w-24 bg-background text-foreground"
-                        onclick={() => calculator.copyEncodedValue(register)}
-                    >
-                        {#if calculator.copiedEncodedValue}
-                            <CheckIcon />
-                            Copied
-                        {:else}
-                            Copy
-                        {/if}
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="absolute top-1 right-1 h-8 px-2.5 text-foreground"
+                            aria-label="Copy encoded register value"
+                            onclick={() => calculator.copyEncodedValue(register)}
+                        >
+                            {#if calculator.copiedEncodedValue}
+                                <CheckIcon />
+                                Copied
+                            {:else}
+                                <CopyIcon aria-hidden="true" />
+                                Copy
+                            {/if}
+                        </Button>
+                    </div>
                 </div>
                 {#if calculator.encodedError}
                     <p class="mt-1.5 text-xs text-destructive">{calculator.encodedError}</p>
                 {/if}
-            </CardContent>
+            </CardFooter>
         </Collapsible.Content>
     </Card>
 </Collapsible.Root>
