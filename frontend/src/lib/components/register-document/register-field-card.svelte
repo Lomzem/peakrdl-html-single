@@ -48,9 +48,7 @@
                 class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 overflow-hidden"
             >
                 <div class="flex min-w-0 items-baseline gap-1.5 overflow-hidden">
-                    <h3
-                        class="min-w-12 max-w-[50%] shrink truncate text-lg font-semibold tracking-tight"
-                    >
+                    <h3 class="min-w-12 shrink truncate text-lg font-semibold tracking-tight">
                         <a
                             href={documentHref({
                                 kind: "register",
@@ -73,7 +71,7 @@
                         {bitRange(field)}
                     </code>
                     <code
-                        class="min-w-6 flex-1 truncate text-xs text-muted-foreground"
+                        class="min-w-6 flex-1 truncate text-xs text-muted-foreground sm:min-w-20"
                         title={field.identifier}
                     >
                         {field.identifier}
