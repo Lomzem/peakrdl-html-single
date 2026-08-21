@@ -17,23 +17,12 @@
     interface Props {
         register: Register;
         breadcrumbs: ReadonlyArray<NavigationNode>;
-        selectedFieldId: string;
         showReservedGaps: boolean;
         calculator: RegisterCalculatorState;
         onNavigate: (event: MouseEvent, target: DocumentTarget) => void;
     }
 
-    let {
-        register,
-        breadcrumbs,
-        selectedFieldId,
-        showReservedGaps,
-        calculator,
-        onNavigate,
-    }: Props = $props();
-    let selectedField = $derived(
-        register.fields.find((candidate) => candidate.id === selectedFieldId),
-    );
+    let { register, breadcrumbs, showReservedGaps, calculator, onNavigate }: Props = $props();
     let copiedAddress = $state("");
 
     async function copyAddress(address: string): Promise<void> {
@@ -71,24 +60,9 @@
                 </a>
             {/each}
             {#if breadcrumbs.length}<ChevronRightIcon class="size-3" />{/if}
-            {#if selectedField}
-                <a
-                    href={documentHref({ kind: "register", registerId: register.id })}
-                    class="rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onclick={(event) =>
-                        onNavigate(event, { kind: "register", registerId: register.id })}
-                >
-                    {register.name}
-                </a>
-                <ChevronRightIcon class="size-3" />
-                <span class="px-1 py-0.5 text-foreground" aria-current="page">
-                    {selectedField.name}
-                </span>
-            {:else}
-                <span class="px-1 py-0.5 text-foreground" aria-current="page">
-                    {register.name}
-                </span>
-            {/if}
+            <span class="px-1 py-0.5 text-foreground" aria-current="page">
+                {register.name}
+            </span>
         </div>
     </nav>
 

@@ -82,7 +82,6 @@
     const addressExpandableIds = expandableIds(addressNavigation);
 
     let selectedId = $state("");
-    let selectedFieldId = $state("");
     let selectedFolderId = $state(registerDocument.navigation.id);
     let expanded = $state<Set<string>>(new Set([registerDocument.navigation.id]));
     let navigationMode = $state<"document" | "address">("document");
@@ -145,7 +144,6 @@
             const folder = navigationById.get(target.folderId);
             if (!folder) return;
             selectedId = "";
-            selectedFieldId = "";
             selectedFolderId = folder.id;
             expanded = new Set([...expanded, folder.id]);
             mobileNavigationOpen = false;
@@ -178,7 +176,6 @@
 
         calculator.selectRegister(register);
         selectedId = register.id;
-        selectedFieldId = field?.id || "";
         selectedFolderId = "";
         expandToRegister(register.id);
         mobileNavigationOpen = false;
@@ -386,7 +383,6 @@
                     <RegisterView
                         register={selectedRegister}
                         breadcrumbs={selectedBreadcrumbs}
-                        {selectedFieldId}
                         {showReservedGaps}
                         {calculator}
                         onNavigate={navigateTo}

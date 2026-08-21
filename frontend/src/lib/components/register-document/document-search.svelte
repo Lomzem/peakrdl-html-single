@@ -114,12 +114,12 @@
 </script>
 
 <div class="relative min-w-0 flex-1" onfocusout={handleFocusOut}>
-    <Kbd.Root class="absolute left-2 top-1/2 hidden -translate-y-1/2 sm:inline-flex"
+    <SearchIcon
+        class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+    />
+    <Kbd.Root class="absolute left-9 top-1/2 hidden -translate-y-1/2 sm:inline-flex"
         >Ctrl K</Kbd.Root
     >
-    <SearchIcon
-        class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground sm:left-[4.25rem]"
-    />
     <Input
         bind:ref={searchInput}
         bind:value={query}
