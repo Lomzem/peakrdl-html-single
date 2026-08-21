@@ -16,7 +16,7 @@
     import { Button } from "$lib/components/ui/button";
     import * as Sheet from "$lib/components/ui/sheet";
     import {
-        documentHash,
+        documentHref,
         enumDomId,
         enumMemberDomId,
         fieldDomId,
@@ -91,6 +91,7 @@
     let sidebarWidth = $state(304);
     let showReservedGaps = $state(true);
     let showBackToTop = $state(false);
+    let navigationVersion = 0;
     let navigationRoot = $derived(
         navigationMode === "address" ? addressNavigation : registerDocument.navigation,
     );
@@ -139,6 +140,7 @@
     }
 
     async function showTarget(target: DocumentTarget, writeHash = true): Promise<void> {
+        const version = ++navigationVersion;
         if (target.kind === "folder") {
             const folder = navigationById.get(target.folderId);
             if (!folder) return;
@@ -148,9 +150,12 @@
             expanded = new Set([...expanded, folder.id]);
             mobileNavigationOpen = false;
             query = "";
-            if (writeHash) location.hash = documentHash(target);
+            if (writeHash && location.hash !== documentHref(target)) {
+                history.pushState(null, "", documentHref(target));
+            }
             await tick();
-            document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+            if (version !== navigationVersion) return;
+            document.querySelector("main")?.scrollTo({ top: 0 });
             return;
         }
 
@@ -178,8 +183,11 @@
         expandToRegister(register.id);
         mobileNavigationOpen = false;
         query = "";
-        if (writeHash) location.hash = documentHash(validTarget);
+        if (writeHash && location.hash !== documentHref(validTarget)) {
+            history.pushState(null, "", documentHref(validTarget));
+        }
         await tick();
+        if (version !== navigationVersion) return;
         const destinationId = member
             ? enumMemberDomId(field!.id, enumValue!.name, member.name)
             : enumValue
@@ -189,11 +197,10 @@
                 : "";
         if (destinationId) {
             document.getElementById(destinationId)?.scrollIntoView({
-                behavior: "smooth",
                 block: "start",
             });
         } else {
-            document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+            document.querySelector("main")?.scrollTo({ top: 0 });
         }
     }
 

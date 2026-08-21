@@ -29,6 +29,12 @@
     let searchFocused = $state(false);
     let activeSearchIndex = $state(-1);
     let searchResults = $derived(query.trim() ? searchService.search(query.trim()) : []);
+    let searchOpen = $derived(Boolean(query.trim() && searchFocused));
+    let activeResultId = $derived(
+        searchOpen && activeSearchIndex >= 0 && activeSearchIndex < searchResults.length
+            ? `search-result-${activeSearchIndex}`
+            : undefined,
+    );
 
     function focusSearch(): void {
         searchInput?.focus();
@@ -40,6 +46,7 @@
         const search = event.currentTarget as HTMLDivElement;
         if (!(nextTarget instanceof Node) || !search.contains(nextTarget)) {
             searchFocused = false;
+            activeSearchIndex = -1;
         }
     }
 
@@ -79,8 +86,18 @@
             activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
         } else if (event.key === "Enter") {
             event.preventDefault();
-            onSelect(searchTarget(searchResults[Math.max(activeSearchIndex, 0)]));
+            const selectedIndex =
+                activeSearchIndex >= 0 && activeSearchIndex < searchResults.length
+                    ? activeSearchIndex
+                    : 0;
+            activeSearchIndex = -1;
+            onSelect(searchTarget(searchResults[selectedIndex]));
         }
+    }
+
+    function handleResultClick(event: MouseEvent, target: DocumentTarget): void {
+        activeSearchIndex = -1;
+        onNavigate(event, target);
     }
 
     createHotkey("Control+K", focusSearch);
@@ -90,6 +107,7 @@
         () => {
             searchInput?.blur();
             searchFocused = false;
+            activeSearchIndex = -1;
         },
         () => ({ enabled: searchFocused }),
     );
@@ -110,17 +128,15 @@
         aria-label="Search registers"
         aria-keyshortcuts="Control+K /"
         role="combobox"
-        aria-expanded={Boolean(query.trim() && searchFocused)}
-        aria-controls={query.trim() && searchFocused ? "search-results" : undefined}
-        aria-activedescendant={activeSearchIndex >= 0
-            ? `search-result-${activeSearchIndex}`
-            : undefined}
+        aria-expanded={searchOpen}
+        aria-controls={searchOpen ? "search-results" : undefined}
+        aria-activedescendant={activeResultId}
         autocomplete="off"
         onfocus={() => (searchFocused = true)}
         oninput={() => (activeSearchIndex = -1)}
         onkeydown={handleKeydown}
     />
-    {#if query.trim() && searchFocused}
+    {#if searchOpen}
         <div
             id="search-results"
             role="listbox"
@@ -136,7 +152,7 @@
                         aria-selected={activeSearchIndex === index}
                         class="grid w-full grid-cols-[8rem_minmax(0,1fr)] items-start gap-2 rounded-md px-3 py-2 text-left hover:bg-muted focus-visible:bg-muted focus-visible:outline-none aria-selected:bg-muted"
                         onmouseenter={() => (activeSearchIndex = index)}
-                        onclick={(event) => onNavigate(event, target)}
+                        onclick={(event) => handleResultClick(event, target)}
                     >
                         <Badge variant="outline" class="mt-0.5 justify-self-start capitalize">
                             {result.kind.replace("-", " ")}
